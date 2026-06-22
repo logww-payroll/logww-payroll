@@ -935,14 +935,14 @@ function buildRunTable(){
   DB.employees.forEach(e=>{
     const ex=existLines.find(l=>l.employee_id===e.id);
     // Auto-calculate from trip log
-    const empTrips=DB.trips.filter(t=>t.period_month===m&&t.period_year===y&&t.employee_id===e.id);
+    const empTrips=DB.trips.filter(t=>t.period_month===m&&t.period_year===y&&(t.employee_id===e.id||(t.employee_id===''&&t.employee_name===e.name)));
     const autoTrip=empTrips.reduce((s,t)=>s+(t.trip_comm||0),0);
     // Auto-calculate deductions
-    const empDeds=DB.deds.filter(d=>d.period_month===m&&d.period_year===y&&d.employee_id===e.id);
+    const empDeds=DB.deds.filter(d=>d.period_month===m&&d.period_year===y&&(d.employee_id===e.id||(d.employee_id===''&&d.employee_name===e.name)));
     const autoDed=empDeds.reduce((s,d)=>s+(d.amount||0),0);
     const dedNotes=empDeds.map(d=>`${catLabel(d.category)}: ${d.description}`).join('; ');
     // Add ledger EMI recoveries for this period
-    const empLedger = DB.ledger.filter(l=>l.employee_id===e.id&&l.balance>0);
+    const empLedger = DB.ledger.filter(l=>(l.employee_id===e.id||(l.employee_id===''&&l.employee_name===e.name))&&l.balance>0);
     const alreadyRecovered = DB.recoveries.filter(r=>r.period_month===m&&r.period_year===y&&r.employee_id===e.id);
     const ledgerEMI = empLedger.reduce((s,l)=>{
       const alreadyRec = alreadyRecovered.find(r=>r.ledger_id===l.id);
@@ -1554,7 +1554,11 @@ function confirmImport(){
   if(document.getElementById('opt-rates').checked&&iData.rates.length){DB.rates=iData.rates;msg.push(iData.rates.length+' rates');}
   if(document.getElementById('opt-trips').checked&&iData.trips.length){
     DB.trips=DB.trips.filter(t=>!(t.period_month===m&&t.period_year===y));
-    DB.trips.push(...iData.trips.map(t=>({...t,period_month:m,period_year:y})));
+    DB.trips.push(...iData.trips.map(t=>{
+      // Resolve employee_id by name if not set
+      const resolvedEmp = t.employee_id ? DB.employees.find(e=>e.id===t.employee_id) : DB.employees.find(e=>e.name===t.employee_name);
+      return {...t,period_month:m,period_year:y,employee_id:resolvedEmp?.id||t.employee_id||'',employee_name:resolvedEmp?.name||t.employee_name};
+    }));
     msg.push(iData.trips.length+' trips for '+MONTHS[m-1]+' '+y);
   }
   if(document.getElementById('opt-deds').checked&&iData.deductions.length){
