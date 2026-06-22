@@ -1035,7 +1035,16 @@ async function savePayroll(){
   });
 
   save();
-  if(sbUrl&&sbKey) await pushSB(run,lines);
+
+  // Push to Supabase — wrapped in try/catch so errors don't block the alert
+  if(sbUrl&&sbKey){
+    try{ await pushSB(run,lines); }
+    catch(e){ console.error('Supabase push error:',e); }
+  }
+
+  // Always show confirmation
+  const period = `${MONTHS[m-1]} ${y}`;
+  const summary = `Payroll for ${period} saved.\n${run.employee_count} employees · ${aed(run.total_net)} net payable.`;
 
   // Auto-send salary slips to employees with email on file
   const withEmail = lines.filter(L=>{
@@ -1044,11 +1053,11 @@ async function savePayroll(){
   });
 
   if(withEmail.length){
-    const doSend = confirm(`Payroll saved.\n\n${withEmail.length} employee${withEmail.length>1?'s have':' has'} an email address on file.\n\nSend salary slips now?`);
-    if(doSend) await sendSlipsForRun(run, lines, `${MONTHS[m-1]} ${y}`);
-    else alert(`Payroll for ${MONTHS[m-1]} ${y} saved.\n${run.employee_count} employees · ${aed(run.total_net)} net.\n\nYou can send slips later from the History page.`);
+    const doSend = confirm(`${summary}\n\n${withEmail.length} employee${withEmail.length>1?'s have':' has'} an email on file.\n\nSend salary slips now?`);
+    if(doSend) await sendSlipsForRun(run, lines, period);
+    else alert(`${summary}\n\nYou can send slips later from History → Send emails.`);
   } else {
-    alert(`Payroll for ${MONTHS[m-1]} ${y} saved.\n${run.employee_count} employees · ${aed(run.total_net)} net.\n\nNo employee emails on file. Add emails in the Employees page to enable auto-sending.`);
+    alert(`${summary}\n\nNo employee emails on file yet. Add emails in the Employees tab to enable auto-sending.`);
   }
 }
 
