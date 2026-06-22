@@ -1,23 +1,2008 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="refresh" content="0;url=/sal/">
-<title>Logistique World Wide LLC</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payroll — Logistique World Wide LLC</title>
 <style>
-  body{font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#F7F7F5;color:#1A1A18}
-  .box{text-align:center}
-  .logo{font-size:22px;font-weight:700;letter-spacing:-.5px;margin-bottom:8px}
-  .sub{font-size:14px;color:#6B6B67;margin-bottom:20px}
-  a{color:#1A1A18;font-size:13px}
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F7F7F5;--surface:#FFFFFF;--border:#E5E5E2;--border-strong:#C8C8C4;
+  --text:#1A1A18;--text-2:#6B6B67;--text-3:#9B9B97;
+  --accent:#1A1A18;--accent-fg:#FFFFFF;
+  --blue-bg:#EBF2FF;--blue-text:#1A4B8C;--blue-bd:#B8D0F5;
+  --green-bg:#EDFAF2;--green-text:#156B3A;--green-bd:#A8E4C0;
+  --amber-bg:#FFF8EB;--amber-text:#8A5A00;--amber-bd:#F5D98A;
+  --red-bg:#FFF0EE;--red-text:#8A2A1A;--red-bd:#F5B8B0;
+  --r:6px;--rl:10px;
+  --font:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  --mono:'JetBrains Mono','Fira Code',monospace;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh}
+.shell{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.main{overflow:auto}
+.page{display:none;padding:2rem 2.5rem;max-width:1200px}
+.page.active{display:block}
+.sb-brand{padding:1.25rem 1.25rem 1rem;border-bottom:1px solid var(--border)}
+.sb-logo{font-size:13px;font-weight:600}
+.sb-sub{font-size:11px;color:var(--text-2);margin-top:1px}
+.sb-sec{font-size:10px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--text-3);padding:.875rem 1.25rem .375rem}
+.sb-item{display:flex;align-items:center;gap:9px;padding:.5rem 1.25rem;font-size:13px;color:var(--text-2);cursor:pointer;border-left:2px solid transparent}
+.sb-item:hover{color:var(--text);background:var(--bg)}
+.sb-item.active{color:var(--text);border-left-color:var(--text);background:var(--bg);font-weight:500}
+.sb-item svg{width:16px;height:16px;flex-shrink:0;opacity:.7}
+.sb-item.active svg{opacity:1}
+.sb-foot{margin-top:auto;padding:1rem 1.25rem;border-top:1px solid var(--border);font-size:11px;color:var(--text-3);display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--border-strong);flex-shrink:0}
+.dot.ok{background:#3DAA6A}.dot.err{background:#D94F3D}
+.ph{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.75rem}
+.ph-t{font-size:20px;font-weight:600;letter-spacing:-.3px}
+.ph-s{font-size:13px;color:var(--text-2);margin-top:3px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--r);border:1px solid var(--border-strong);background:var(--surface);color:var(--text);font-size:13px;font-family:var(--font);cursor:pointer;font-weight:500;white-space:nowrap}
+.btn:hover{background:var(--bg)}.btn:active{transform:scale(.98)}
+.btn.pri{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}.btn.pri:hover{opacity:.88}
+.btn.dan{color:var(--red-text);border-color:var(--red-bd)}.btn.dan:hover{background:var(--red-bg)}
+.btn.sm{padding:5px 10px;font-size:12px}.btn.xs{padding:3px 8px;font-size:11px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.75rem}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:1rem 1.25rem}
+.metric-l{font-size:11px;color:var(--text-2);font-weight:500;letter-spacing:.2px;margin-bottom:6px}
+.metric-v{font-size:22px;font-weight:600;letter-spacing:-.5px}
+.metric-s{font-size:11px;color:var(--text-3);margin-top:3px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:1.25rem;margin-bottom:1rem}
+.card-t{font-size:13px;font-weight:600;margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+.tw{overflow-x:auto;border:1px solid var(--border);border-radius:var(--rl)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{text-align:left;padding:9px 12px;color:var(--text-2);font-weight:500;font-size:11px;letter-spacing:.2px;border-bottom:1px solid var(--border);background:var(--bg);white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border)}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--bg)}
+tbody td{padding:8px 12px;vertical-align:middle}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500}
+.b-dr{background:var(--blue-bg);color:var(--blue-text)}
+.b-st{background:var(--amber-bg);color:var(--amber-text)}
+.b-fine{background:var(--red-bg);color:var(--red-text)}
+.b-adv{background:var(--amber-bg);color:var(--amber-text)}
+.b-lwp{background:#F3EDFF;color:#5B21B6}
+.b-oth{background:var(--bg);color:var(--text-2);border:1px solid var(--border)}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fg.g3{grid-template-columns:1fr 1fr 1fr}
+.fg.g4{grid-template-columns:1fr 1fr 1fr 1fr}
+.fgrp{display:flex;flex-direction:column;gap:5px}
+.fgrp.s2{grid-column:span 2}
+.fgrp label{font-size:12px;font-weight:500;color:var(--text-2)}
+.fgrp input,.fgrp select{padding:7px 10px;border:1px solid var(--border-strong);border-radius:var(--r);font-size:13px;font-family:var(--font);background:var(--surface);color:var(--text)}
+.fgrp input:focus,.fgrp select:focus{outline:none;border-color:var(--accent)}
+.ri{padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-size:12px;font-family:var(--font);background:var(--surface);color:var(--text);width:100%}
+.ri:focus{outline:none;border-color:var(--accent)}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--rl);padding:1.75rem;width:600px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.12)}
+.modal.wide{width:780px}
+.modal-t{font-size:16px;font-weight:600;margin-bottom:1.25rem;display:flex;justify-content:space-between;align-items:center}
+.modal-ft{display:flex;gap:8px;justify-content:flex-end;margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border)}
+.notice{display:flex;gap:10px;align-items:flex-start;padding:.875rem 1rem;border-radius:var(--r);margin-bottom:1.25rem;font-size:13px}
+.notice.info{background:var(--blue-bg);color:var(--blue-text);border:1px solid var(--blue-bd)}
+.notice.warn{background:var(--amber-bg);color:var(--amber-text);border:1px solid var(--amber-bd)}
+.sdiv{font-size:11px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--text-3);margin:1.25rem 0 .625rem;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.slip{font-size:12px;line-height:1.6}
+.slip-hd{display:flex;justify-content:space-between;padding-bottom:12px;border-bottom:1px solid var(--border);margin-bottom:12px}
+.slip-co{font-size:14px;font-weight:700}
+.slip-addr{font-size:10px;color:var(--text-2);margin-top:1px}
+.slip-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:10px 0 14px}
+.sf label{font-size:10px;color:var(--text-2);font-weight:500;display:block}
+.sf span{font-size:12px;font-weight:500}
+.slip-sec{font-size:10px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--text-2);margin:12px 0 5px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.sr{display:flex;justify-content:space-between;padding:3px 0;font-size:12px;border-bottom:1px solid var(--border)}
+.sr:last-child{border:none}
+.sr.tot{font-weight:600;background:var(--bg);padding:5px 8px;border-radius:var(--r);border:none;margin-top:4px}
+.sr.neg{color:var(--red-text)}
+.slip-net{display:flex;justify-content:space-between;align-items:center;background:var(--accent);color:var(--accent-fg);padding:10px 14px;border-radius:var(--r);margin-top:10px}
+.slip-net-l{font-weight:600;font-size:13px}
+.slip-net-v{font-size:16px;font-weight:700;letter-spacing:-.3px}
+.slip-memo{background:var(--bg);border-radius:var(--r);padding:10px 12px;margin-top:10px;border:1px solid var(--border)}
+.slip-memo-t{font-size:10px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--text-2);margin-bottom:7px}
+.slip-memo-r{display:flex;justify-content:space-between;font-size:11px;padding:2px 0;color:var(--text-2)}
+.slip-memo-r.neg{color:var(--red-text)}
+.slip-disc{font-size:10px;color:var(--text-3);margin-top:8px;line-height:1.5}
+.hc{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);margin-bottom:10px;overflow:hidden}
+.hh{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer}
+.hh:hover{background:var(--bg)}
+.hb{display:none;border-top:1px solid var(--border);padding:0 16px 16px}
+.hb.open{display:block}
+.schema-block{background:#1A1A18;color:#E8E8E4;border-radius:var(--rl);padding:1.25rem;font-family:var(--mono);font-size:11px;line-height:1.7;overflow-x:auto;white-space:pre;margin-top:.875rem}
+.mono{font-family:var(--mono);font-size:11px}
+.empty{text-align:center;padding:3rem 1rem;color:var(--text-3);font-size:13px}
+.tag{display:inline-flex;align-items:center;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+/* Trip log styles */
+.tl-driver-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);margin-bottom:1rem;overflow:hidden}
+.tl-driver-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg);border-bottom:1px solid var(--border)}
+.tl-driver-name{font-weight:600;font-size:13px}
+.tl-summary{display:flex;gap:16px;font-size:12px;color:var(--text-2)}
+.tl-summary strong{color:var(--text)}
+.tl-trips{padding:0}
+.tl-empty{padding:16px;font-size:12px;color:var(--text-3);text-align:center}
+/* Deduction tag colors */
+.cat-fine{background:var(--red-bg);color:var(--red-text)}
+.cat-advance{background:var(--amber-bg);color:var(--amber-text)}
+.cat-lwp{background:#F3EDFF;color:#5B21B6}
+.cat-other{background:var(--bg);color:var(--text-2);border:1px solid var(--border)}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
-<div class="box">
-  <div class="logo">Logistique World Wide LLC</div>
-  <div class="sub">Redirecting to payroll system…</div>
-  <a href="/sal/">Click here if not redirected</a>
+<div class="shell">
+<aside class="sidebar">
+  <div class="sb-brand"><div class="sb-logo">Logistique WW LLC</div><div class="sb-sub">Payroll system</div></div>
+  <div class="sb-sec">Overview</div>
+  <div class="sb-item active" onclick="nav('dashboard',this)"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</div>
+  <div class="sb-sec">Payroll</div>
+  <div class="sb-item" onclick="nav('trips',this)"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>Trip log</div>
+  <div class="sb-item" onclick="nav('deductions',this)"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>Deductions</div>
+  <div class="sb-item" onclick="nav('run',this)"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 12h8M12 8v8"/></svg>Run payroll</div>
+  <div class="sb-item" onclick="nav('history',this)"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>History</div>
+  <div class="sb-sec">Data</div>
+  <div class="sb-item" onclick="nav('ledger',this)"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" width="16" height="16"><path d="M4 4h16v2H4zM4 10h10M4 14h10M4 18h7"/><path d="M15 14l2 2 4-4"/></svg>Employee ledger</div>
+  <div class="sb-item" onclick="nav('import',this)"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Import Excel</div>
+  <div class="sb-sec">Setup</div>
+  <div class="sb-item" onclick="nav('employees',this)"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75M21 21v-2a4 4 0 0 0-3-3.85"/></svg>Employees</div>
+  <div class="sb-item" onclick="nav('rates',this)"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 7h6M9 12h6M9 17h4"/><rect x="4" y="3" width="16" height="18" rx="2"/></svg>Commission rates</div>
+  <div class="sb-item" onclick="nav('settings',this)"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>Settings</div>
+  <div class="sb-foot"><div class="dot" id="conn-dot"></div><span id="conn-lbl">Not connected</span></div>
+</aside>
+
+<main class="main">
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div class="ph"><div><div class="ph-t">Dashboard</div><div class="ph-s" id="dash-s">Payroll overview</div></div>
+    <button class="btn pri" onclick="nav('trips',document.querySelectorAll('.sb-item')[2])"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Log trips</button></div>
+  <div class="metrics" id="dash-m"></div>
+  <div class="card"><div class="card-t"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Recent runs</div><div id="dash-r"></div></div>
 </div>
+
+<!-- TRIP LOG -->
+<div class="page" id="page-trips">
+  <div class="ph">
+    <div><div class="ph-t">Trip log</div><div class="ph-s" id="trips-s">Log individual trips — commission auto-calculated from rate card</div></div>
+    <div class="btn-row">
+      <select id="trip-month" class="ri" style="width:130px"></select>
+      <select id="trip-year" class="ri" style="width:90px"></select>
+      <button class="btn" onclick="openPasteModal()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>Paste from Excel</button><button class="btn pri" onclick="openTripModal()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add trip</button>
+    </div>
+  </div>
+  <div id="trips-list"></div>
+</div>
+
+<!-- DEDUCTIONS -->
+<div class="page" id="page-deductions">
+  <div class="ph">
+    <div><div class="ph-t">Deductions</div><div class="ph-s">Fines, advances, leave without pay — linked to payroll runs</div></div>
+    <div class="btn-row">
+      <select id="ded-month" class="ri" style="width:130px"></select>
+      <select id="ded-year" class="ri" style="width:90px"></select>
+      <button class="btn pri" onclick="openDedModal()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add deduction</button>
+    </div>
+  </div>
+  <div id="ded-list"></div>
+</div>
+
+<!-- RUN PAYROLL -->
+<div class="page" id="page-run">
+  <div class="ph"><div><div class="ph-t">Run payroll</div><div class="ph-s">Review auto-populated data from trip log and deductions, then save</div></div>
+    <div class="btn-row">
+      <select id="run-month" class="ri" style="width:130px"></select>
+      <select id="run-year" class="ri" style="width:90px"></select>
+    </div>
+  </div>
+  <div id="run-notice" class="notice info"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg><span>Trip commissions and deductions are pulled automatically from the Trip Log and Deductions pages for the selected period.</span></div>
+  <div class="tw" id="run-tw"></div>
+  <div class="btn-row" style="margin-top:1rem">
+    <button class="btn pri" onclick="savePayroll()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Save & generate slips</button>
+    <button class="btn" onclick="previewAll()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Preview all slips</button>
+    <button class="btn" onclick="exportCSV()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export CSV</button>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div class="page" id="page-history">
+  <div class="ph"><div><div class="ph-t">History</div><div class="ph-s">All saved payroll runs</div></div>
+    <button class="btn" onclick="exportAllCSV()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export all history</button></div>
+  <div id="history-list"></div>
+</div>
+
+<!-- EMPLOYEES -->
+<div class="page" id="page-employees">
+  <div class="ph"><div><div class="ph-t">Employees</div><div class="ph-s" id="emp-s"></div></div>
+    <button class="btn pri" onclick="openEmpModal()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add employee</button></div>
+  <div class="tw"><table><thead><tr><th>Name</th><th>Type</th><th>Designation</th><th>Work permit</th><th>Basic salary</th><th>IBAN</th><th>Email</th><th></th></tr></thead><tbody id="emp-tb"></tbody></table></div>
+</div>
+
+<!-- RATES -->
+<div class="page" id="page-rates">
+  <div class="ph"><div><div class="ph-t">Commission rates</div><div class="ph-s">Rate per route — used by trip log to auto-calculate commission</div></div>
+    <button class="btn pri" onclick="openRateModal()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add rate</button></div>
+  <div class="tw"><table><thead><tr><th>Customer</th><th>Route / trip type</th><th>Rate (AED per trip)</th><th></th></tr></thead><tbody id="rates-tb"></tbody></table></div>
+</div>
+
+<!-- SETTINGS -->
+<div class="page" id="page-settings">
+  <div class="ph"><div><div class="ph-t">Settings</div><div class="ph-s">Supabase connection and company details</div></div></div>
+  <div class="card">
+    <div class="card-t"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>Supabase connection</div>
+    <div class="notice info"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+      <div>Paste your Supabase <strong>Project URL</strong> and <strong>Publishable key</strong> from <strong>supabase.com → project → Settings → API</strong>. Then click "Run schema" to create all tables.</div></div>
+    <div class="sdiv">Connection</div>
+    <div class="fg" style="margin-bottom:1rem">
+      <div class="fgrp s2"><label>Project URL</label><input type="text" id="sb-url" class="mono" placeholder="https://xxxxxxxxxxxx.supabase.co" oninput="saveSB()"></div>
+      <div class="fgrp s2"><label>Publishable key</label><input type="text" id="sb-key" class="mono" placeholder="sb_publishable_..." oninput="saveSB()"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn pri" onclick="testSB()">Test connection</button>
+      <button class="btn" onclick="runSchema()">Run schema</button>
+      <button class="btn" onclick="toggleSchema()">Show SQL</button>
+    </div>
+    <div id="sb-st" style="margin-top:.875rem;font-size:13px"></div>
+    <div id="sb-schema" style="display:none"><div class="schema-block" id="schema-sql"></div><button class="btn sm" style="margin-top:8px" onclick="copySchema()">Copy SQL</button></div>
+  </div>
+  <div class="card">
+    <div class="card-t">Company details</div>
+    <div class="fg">
+      <div class="fgrp"><label>Company name</label><input type="text" id="co-name" value="Logistique World Wide LLC"></div>
+      <div class="fgrp"><label>Address</label><input type="text" id="co-addr" value="117A, Arenco Offices DIP-1, Dubai"></div>
+      <div class="fgrp"><label>WPS commission (AED)</label><input type="number" id="co-wps" value="5"></div>
+      <div class="fgrp"><label>VAT (AED)</label><input type="number" id="co-vat" value="0.25"></div>
+    </div>
+    <div class="btn-row" style="margin-top:.875rem"><button class="btn pri" onclick="saveCo()">Save</button></div>
+  </div>
+</div>
+
+<!-- IMPORT -->
+<div class="page" id="page-import">
+  <div class="ph"><div><div class="ph-t">Import from Excel</div><div class="ph-s">Read employee data, commission rates, trips and deductions from your Excel file</div></div></div>
+
+  <div class="card">
+    <div class="card-t"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Select your Excel file</div>
+    <div class="notice info">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+      <div>Upload your Excel file to import employees, commission rates, trips and deductions. Use the <strong>import template</strong> for new months — it has dropdowns, auto-calculated commission, and the right structure the app expects.</div>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:1rem">
+      <a href="payroll_import_template.xlsx" download style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--r);border:1px solid var(--green-bd);background:var(--green-bg);color:var(--green-text);font-size:13px;font-weight:500;text-decoration:none">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download import template (.xlsx)
+      </a>
+      <div style="font-size:12px;color:var(--text-2);align-self:center">Fill in Trip Log and Deductions sheets, then upload here</div>
+    </div>
+    <div style="border:2px dashed var(--border-strong);border-radius:var(--rl);padding:2.5rem;text-align:center;margin-bottom:1rem;cursor:pointer;transition:all .15s" id="drop-zone" onclick="document.getElementById('xl-file').click()" ondragover="event.preventDefault();this.style.borderColor='var(--accent)'" ondragleave="this.style.borderColor='var(--border-strong)'" ondrop="handleDrop(event)">
+      <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="color:var(--text-3);margin-bottom:10px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+      <div style="font-size:14px;font-weight:500;margin-bottom:4px">Click to select or drag and drop</div>
+      <div style="font-size:12px;color:var(--text-3)">.xlsx files only</div>
+    </div>
+    <input type="file" id="xl-file" accept=".xlsx,.xls" style="display:none" onchange="readExcel(this.files[0])">
+    <div id="xl-filename" style="font-size:12px;color:var(--text-2);margin-bottom:.5rem"></div>
+  </div>
+
+  <div id="import-preview" style="display:none">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem" id="import-summary"></div>
+
+    <div class="card" id="imp-emp-card" style="display:none">
+      <div class="card-t"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>Employees found</div>
+      <div class="tw"><table><thead><tr><th>Name</th><th>Type</th><th>Designation</th><th>Work permit</th><th>Labor card</th><th>IBAN</th><th>Basic salary</th></tr></thead><tbody id="imp-emp-tb"></tbody></table></div>
+    </div>
+
+    <div class="card" id="imp-rates-card" style="display:none">
+      <div class="card-t"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 7h6M9 12h6M9 17h4"/><rect x="4" y="3" width="16" height="18" rx="2"/></svg>Commission rates found</div>
+      <div class="tw"><table><thead><tr><th>Customer</th><th>Route</th><th>Rate (AED)</th></tr></thead><tbody id="imp-rates-tb"></tbody></table></div>
+    </div>
+
+    <div class="card" id="imp-trips-card" style="display:none">
+      <div class="card-t"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>Trips found <span id="imp-trips-period" style="font-weight:400;color:var(--text-2)"></span></div>
+      <div class="tw"><table><thead><tr><th>Date</th><th>Driver</th><th>Route</th><th>Truck</th><th>Trip comm</th><th>Border</th><th>Diesel</th><th>Other</th><th>Total</th></tr></thead><tbody id="imp-trips-tb"></tbody></table></div>
+    </div>
+
+    <div class="card" id="imp-deds-card" style="display:none">
+      <div class="card-t"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>Deductions found</div>
+      <div class="tw"><table><thead><tr><th>Employee</th><th>Description</th><th>Amount</th></tr></thead><tbody id="imp-deds-tb"></tbody></table></div>
+    </div>
+
+    <div style="margin-top:1rem" id="imp-options">
+      <div class="sdiv">Import options</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:1rem">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="opt-emp" checked> Import employees (replaces existing list)</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="opt-rates" checked> Import commission rates (replaces existing rates)</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="opt-trips" checked> Import trips into selected month</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="opt-deds" checked> Import deductions into selected month</label>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:1rem">
+        <label style="font-size:13px;color:var(--text-2)">Import trips/deductions into:</label>
+        <select id="imp-month" class="ri" style="width:130px"></select>
+        <select id="imp-year" class="ri" style="width:90px"></select>
+      </div>
+      <button class="btn pri" onclick="confirmImport()">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Confirm import
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- LEDGER -->
+<div class="page" id="page-ledger">
+  <div class="ph">
+    <div><div class="ph-t">Employee ledger</div><div class="ph-s">Track payables per employee — recoveries deducted automatically each payroll run</div></div>
+    <button class="btn pri" onclick="openLedgerModal()">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      Add payable
+    </button>
+  </div>
+
+  <!-- Summary cards -->
+  <div id="ledger-summary" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem"></div>
+
+  <!-- Per-employee ledger blocks -->
+  <div id="ledger-list"></div>
+</div>
+
+</main>
+</div>
+
+<!-- MODALS -->
+<!-- Add Trip -->
+<div class="modal-bg" id="modal-trip">
+  <div class="modal" style="width:560px">
+    <div class="modal-t">Add trip<button class="btn xs" onclick="closeM('modal-trip')">✕</button></div>
+    <input type="hidden" id="trip-id">
+    <div class="fg" style="margin-bottom:.875rem">
+      <div class="fgrp"><label>Date</label><input type="date" id="tr-date"></div>
+      <div class="fgrp"><label>Truck no.</label><input type="text" id="tr-truck" placeholder="e.g. D-55434"></div>
+    </div>
+    <div class="fgrp" style="margin-bottom:.875rem">
+      <label>Driver</label><select id="tr-driver" style="width:100%"></select>
+    </div>
+    <div class="fgrp" style="margin-bottom:.875rem">
+      <label>Route / trip type</label><select id="tr-route" onchange="fillTripComm()" style="width:100%"></select>
+    </div>
+    <div class="fg" style="margin-bottom:.875rem">
+      <div class="fgrp"><label>From</label><input type="text" id="tr-from" placeholder="e.g. DIP"></div>
+      <div class="fgrp"><label>To / destination</label><input type="text" id="tr-to" placeholder="e.g. Abu Dhabi"></div>
+    </div>
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:.875rem">
+      <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Expenses & commission</div>
+      <div class="fg g3" style="margin-bottom:.5rem">
+        <div class="fgrp"><label>Border exp (AED)</label><input type="number" id="tr-border" value="0" oninput="calcTripTotal()"></div>
+        <div class="fgrp"><label>Diesel exp (AED)</label><input type="number" id="tr-diesel" value="0" oninput="calcTripTotal()"></div>
+        <div class="fgrp"><label>Other exp (AED)</label><input type="number" id="tr-other" value="0" oninput="calcTripTotal()"></div>
+      </div>
+      <div class="fg">
+        <div class="fgrp"><label>Trip comm (auto from rate card)</label><input type="number" id="tr-comm" readonly style="background:var(--surface);font-weight:600;color:var(--green-text)"></div>
+        <div class="fgrp"><label>Total (auto)</label><input type="number" id="tr-total" readonly style="background:var(--surface);font-weight:600"></div>
+      </div>
+    </div>
+    <div class="fgrp" style="margin-bottom:.875rem">
+      <label>Notes</label><input type="text" id="tr-notes" placeholder="Optional">
+    </div>
+    <div class="modal-ft"><button class="btn" onclick="closeM('modal-trip')">Cancel</button><button class="btn pri" onclick="saveTrip()">Save trip</button></div>
+  </div>
+</div>
+
+<!-- Add Deduction -->
+<div class="modal-bg" id="modal-ded">
+  <div class="modal" style="width:560px">
+    <div class="modal-t">Add deduction<button class="btn xs" onclick="closeM('modal-ded')">✕</button></div>
+    <input type="hidden" id="ded-id">
+    <div class="fg" style="margin-bottom:.875rem">
+      <div class="fgrp"><label>Employee</label><select id="dd-emp"></select></div>
+      <div class="fgrp"><label>Date</label><input type="date" id="dd-date"></div>
+      <div class="fgrp"><label>Category</label>
+        <select id="dd-cat">
+          <option value="fine">Fine</option>
+          <option value="advance">Salary advance</option>
+          <option value="lwp">Leave without pay</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="fgrp"><label>Amount (AED)</label><input type="number" id="dd-amount" min="0"></div>
+      <div class="fgrp s2"><label>Description</label><input type="text" id="dd-desc" placeholder="e.g. Abu Dhabi tailgating fine, case no. 170250192318"></div>
+      <div class="fgrp"><label>Reference / case no.</label><input type="text" id="dd-ref" placeholder="Optional"></div>
+      <div class="fgrp"><label>Traffic points transferred</label><input type="number" id="dd-pts" placeholder="0 if N/A"></div>
+    </div>
+    <div class="sdiv">Attachment</div>
+    <div id="ded-attach-zone" style="border:2px dashed var(--border-strong);border-radius:var(--r);padding:1.25rem;text-align:center;cursor:pointer;margin-bottom:.875rem;transition:border-color .15s"
+      onclick="document.getElementById('ded-file').click()"
+      ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+      ondragleave="this.style.borderColor='var(--border-strong)'"
+      ondrop="handleDedDrop(event)">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="color:var(--text-3);margin-bottom:6px"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+      <div style="font-size:13px;font-weight:500;color:var(--text-2)">Click or drag to attach a file</div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:3px">PDF, image, or any document — max 4 MB</div>
+    </div>
+    <input type="file" id="ded-file" style="display:none" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" onchange="handleDedFile(this.files[0])">
+    <div id="ded-attach-preview" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;margin-bottom:.875rem;display:none;align-items:center;gap:10px">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" style="color:var(--blue-text);flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <div style="flex:1;min-width:0">
+        <div id="ded-attach-name" style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+        <div id="ded-attach-size" style="font-size:11px;color:var(--text-2)"></div>
+      </div>
+      <button class="btn xs dan" onclick="clearDedAttach()">Remove</button>
+    </div>
+    <div class="modal-ft"><button class="btn" onclick="closeM('modal-ded')">Cancel</button><button class="btn pri" onclick="saveDed()">Save deduction</button></div>
+  </div>
+</div>
+
+<!-- Employee modal -->
+<div class="modal-bg" id="modal-emp">
+  <div class="modal">
+    <div class="modal-t"><span id="emp-mt">Add employee</span><button class="btn xs" onclick="closeM('modal-emp')">✕</button></div>
+    <input type="hidden" id="emp-id">
+    <div class="fg">
+      <div class="fgrp s2"><label>Full name</label><input type="text" id="emp-name"></div>
+      <div class="fgrp"><label>Type</label><select id="emp-sheet"><option>Driver</option><option>Staff</option></select></div>
+      <div class="fgrp"><label>Designation</label><input type="text" id="emp-desig"></div>
+      <div class="fgrp"><label>Work permit no.</label><input type="text" id="emp-wp" class="mono"></div>
+      <div class="fgrp"><label>Labor card no.</label><input type="text" id="emp-lc" class="mono"></div>
+      <div class="fgrp s2"><label>IBAN / Account</label><input type="text" id="emp-iban" class="mono"></div>
+      <div class="fgrp"><label>Basic salary (AED/month)</label><input type="number" id="emp-basic" value="0"></div>
+      <div class="fgrp"><label>Email</label><input type="email" id="emp-email"></div>
+    </div>
+    <div class="modal-ft"><button class="btn" onclick="closeM('modal-emp')">Cancel</button><button class="btn pri" onclick="saveEmp()">Save</button></div>
+  </div>
+</div>
+
+<!-- Rate modal -->
+<div class="modal-bg" id="modal-rate">
+  <div class="modal" style="width:420px">
+    <div class="modal-t">Commission rate<button class="btn xs" onclick="closeM('modal-rate')">✕</button></div>
+    <input type="hidden" id="rate-id">
+    <div class="fg">
+      <div class="fgrp"><label>Customer</label><input type="text" id="rate-cust"></div>
+      <div class="fgrp"><label>Route / trip type</label><input type="text" id="rate-route"></div>
+      <div class="fgrp"><label>Rate (AED per trip)</label><input type="number" id="rate-amt"></div>
+    </div>
+    <div class="modal-ft"><button class="btn" onclick="closeM('modal-rate')">Cancel</button><button class="btn pri" onclick="saveRate()">Save</button></div>
+  </div>
+</div>
+
+<!-- Slip modal -->
+<div class="modal-bg" id="modal-slip">
+  <div class="modal" style="width:580px">
+    <div class="modal-t"><span id="slip-t">Salary slip</span><button class="btn xs" onclick="closeM('modal-slip')">✕</button></div>
+    <div id="slip-c"></div>
+    <div class="modal-ft"><button class="btn" onclick="closeM('modal-slip')">Close</button></div>
+  </div>
+</div>
+
+<!-- All slips modal -->
+<div class="modal-bg" id="modal-all">
+  <div class="modal" style="width:640px">
+    <div class="modal-t"><span id="all-t">All salary slips</span><button class="btn xs" onclick="closeM('modal-all')">✕</button></div>
+    <div id="all-c"></div>
+    <div class="modal-ft"><button class="btn" onclick="closeM('modal-all')">Close</button></div>
+  </div>
+</div>
+
+<script>
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const now=new Date();
+let sbUrl='',sbKey='';
+let runOverrides={};
+
+const SCHEMA=`-- Run once in Supabase SQL editor
+create table if not exists employees (
+  id uuid primary key default gen_random_uuid(),
+  name text not null, sheet text default 'Driver',
+  designation text, work_permit text, labor_card text,
+  iban text, basic_salary numeric default 0, email text,
+  created_at timestamptz default now()
+);
+create table if not exists commission_rates (
+  id uuid primary key default gen_random_uuid(),
+  customer text, route text not null, rate numeric not null
+);
+create table if not exists trip_log (
+  id uuid primary key default gen_random_uuid(),
+  period_month int not null, period_year int not null,
+  employee_id uuid, employee_name text,
+  trip_date date, truck text,
+  route text, customer text,
+  trip_comm numeric default 0,
+  border_exp numeric default 0, diesel_exp numeric default 0,
+  other_exp numeric default 0, total numeric default 0,
+  from_loc text, to_loc text, notes text,
+  created_at timestamptz default now()
+);
+create table if not exists deductions (
+  id uuid primary key default gen_random_uuid(),
+  period_month int not null, period_year int not null,
+  employee_id uuid, employee_name text,
+  ded_date date, category text, description text,
+  reference text, amount numeric default 0,
+  traffic_points int default 0,
+  created_at timestamptz default now()
+);
+create table if not exists payroll_runs (
+  id uuid primary key default gen_random_uuid(),
+  period_month int not null, period_year int not null,
+  total_net numeric default 0, total_gross numeric default 0,
+  employee_count int default 0,
+  created_at timestamptz default now(),
+  unique(period_month, period_year)
+);
+create table if not exists payroll_lines (
+  id uuid primary key default gen_random_uuid(),
+  run_id uuid references payroll_runs(id) on delete cascade,
+  employee_id uuid, employee_name text,
+  worked_days int default 30, total_days int default 30,
+  basic_salary numeric default 0,
+  trip_commission numeric default 0, other_commission numeric default 0,
+  advances numeric default 0, deduction_notes text,
+  total_fixed numeric default 0, total_variable numeric default 0,
+  net_payable numeric default 0,
+  created_at timestamptz default now()
+);
+alter table employees enable row level security;
+alter table commission_rates enable row level security;
+alter table trip_log enable row level security;
+alter table deductions enable row level security;
+alter table payroll_runs enable row level security;
+alter table payroll_lines enable row level security;
+create policy "allow_all" on employees for all using (true) with check (true);
+create policy "allow_all" on commission_rates for all using (true) with check (true);
+create policy "allow_all" on trip_log for all using (true) with check (true);
+create policy "allow_all" on deductions for all using (true) with check (true);
+create policy "allow_all" on payroll_runs for all using (true) with check (true);
+create policy "allow_all" on payroll_lines for all using (true) with check (true);`;
+
+const DEF_EMP=[
+  {id:'e1',name:'JUGRAJ SINGH TARSEM SINGH',sheet:'Driver',designation:'Driver',work_permit:'114745323',labor_card:'115352830',iban:'AE560355640012255102386',basic_salary:0,email:''},
+  {id:'e2',name:'INDERJEET SINGH JASWANT SINGH',sheet:'Driver',designation:'Driver',work_permit:'114859100',labor_card:'115354469',iban:'945183561190491',basic_salary:0,email:''},
+  {id:'e3',name:'WASEEM KHAN ABDUL WAHAB',sheet:'Driver',designation:'Driver',work_permit:'118226216',labor_card:'119535640',iban:'AE960410000012294875001',basic_salary:1300,email:''},
+  {id:'e4',name:'FAISAL RASHEED AWAN ABDUL RASHEED',sheet:'Driver',designation:'Driver',work_permit:'118225878',labor_card:'118635545',iban:'AE820410000012294864001',basic_salary:1300,email:''},
+  {id:'e5',name:'SAJID GULZAR GULZAR NASEEM',sheet:'Driver',designation:'Driver',work_permit:'120511136',labor_card:'121057576',iban:'AE430410000012302434001',basic_salary:1300,email:''},
+  {id:'e6',name:'MUHAMMAD ISHTIAQ GUL AKBAR',sheet:'Driver',designation:'Driver',work_permit:'123529575',labor_card:'123206286',iban:'AE250260000125957841401',basic_salary:1300,email:''},
+  {id:'e7',name:'SAROJ PARIYAR',sheet:'Driver',designation:'Driver',work_permit:'123993806',labor_card:'123854873',iban:'AE350030012904865910001',basic_salary:1300,email:''},
+  {id:'e8',name:'BIR BAHADUR BHUJEL DHAN BAHADUR BHUJEL',sheet:'Driver',designation:'Driver',work_permit:'127125955',labor_card:'124857323',iban:'945185242060636',basic_salary:1300,email:''},
+  {id:'e9',name:'SURJIT SINGH DALIP SINGH',sheet:'Driver',designation:'Driver',work_permit:'87897990',labor_card:'127582854',iban:'915183561811409',basic_salary:0,email:''},
+  {id:'e10',name:'IRFAN ZAFAR ZAFAR IQBAL',sheet:'Staff',designation:'Sales Associate',work_permit:'121169305',labor_card:'125806729',iban:'AE050330000019100649238',basic_salary:1300,email:''},
+  {id:'e11',name:'JAINUL RAFIQ MOHAMMAD RAFIQ',sheet:'Staff',designation:'Sales Associate',work_permit:'133270851',labor_card:'N/A',iban:'AE831325211063520000001',basic_salary:1300,email:''},
+];
+const DEF_RATES=[
+  {id:'r1',customer:'Crown',route:'DRC',rate:35},{id:'r2',customer:'Crown',route:'ADRC',rate:85},
+  {id:'r3',customer:'Crown',route:'ORC',rate:160},{id:'r4',customer:'Crown',route:'Impala',rate:25},
+  {id:'r5',customer:'Crown',route:'UBF',rate:35},{id:'r6',customer:'Crown',route:'Aujan',rate:35},
+  {id:'r7',customer:'Crown',route:'Kingsley',rate:25},{id:'r8',customer:'Utmost',route:'DIP to RAK',rate:90},
+  {id:'r9',customer:'Utmost',route:'DIP to Fujairah',rate:100},{id:'r10',customer:'Utmost',route:'DIP to Dubai',rate:50},
+  {id:'r11',customer:'Automech',route:'Automech',rate:900},
+];
+
+// Smart init — use defaults if localStorage is empty or corrupted
+function safeGet(key, fallback){
+  try{
+    const raw=localStorage.getItem(key);
+    if(!raw) return fallback;
+    const parsed=JSON.parse(raw);
+    // If it's an array that's empty but fallback has data, use fallback
+    if(Array.isArray(parsed)&&parsed.length===0&&Array.isArray(fallback)&&fallback.length>0) return fallback;
+    return parsed||fallback;
+  }catch(e){ return fallback; }
+}
+
+let DB={
+  employees:safeGet('pl_emp', DEF_EMP),
+  rates:safeGet('pl_rates', DEF_RATES),
+  trips:safeGet('pl_trips', []),
+  deds:safeGet('pl_deds', []),
+  runs:safeGet('pl_runs', []),
+  lines:safeGet('pl_lines', []),
+  ledger:safeGet('pl_ledger', []),
+  recoveries:safeGet('pl_recoveries', []),
+  company:safeGet('pl_co', {name:'Logistique World Wide LLC',addr:'117A, Arenco Offices DIP-1, Dubai',wps:5,vat:0.25}),
+};
+
+function save(){
+  localStorage.setItem('pl_emp',JSON.stringify(DB.employees));
+  localStorage.setItem('pl_rates',JSON.stringify(DB.rates));
+  localStorage.setItem('pl_trips',JSON.stringify(DB.trips));
+  localStorage.setItem('pl_deds',JSON.stringify(DB.deds));
+  localStorage.setItem('pl_runs',JSON.stringify(DB.runs));
+  localStorage.setItem('pl_lines',JSON.stringify(DB.lines));
+  localStorage.setItem('pl_co',JSON.stringify(DB.company));
+  localStorage.setItem('pl_ledger',JSON.stringify(DB.ledger));
+  localStorage.setItem('pl_recoveries',JSON.stringify(DB.recoveries));
+}
+
+function uid(){return 'id-'+Date.now()+'-'+Math.random().toString(36).slice(2);}
+function aed(n){return 'AED '+Number(n||0).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function num(n){return Number(n||0).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function periodKey(m,y){return y*100+m;}
+function catLabel(c){return{fine:'Fine',advance:'Advance',lwp:'LWP',other:'Other'}[c]||c;}
+function catClass(c){return{fine:'cat-fine',advance:'cat-advance',lwp:'cat-lwp',other:'cat-other'}[c]||'cat-other';}
+
+function nav(page,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  el.classList.add('active');
+  ({dashboard:renderDash,trips:renderTrips,deductions:renderDeds,run:renderRun,history:renderHistory,employees:renderEmps,rates:renderRates,settings:loadSettings,import:renderImport,ledger:renderLedger})[page]?.();
+}
+
+/* ─── helpers ─── */
+function monthSels(mId,yId){
+  // Already populated by init — just wire onchange if needed
+  [mId,yId].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el||el.children.length) return;
+    if(id.includes('month'))MONTHS.forEach((m,i)=>{const o=document.createElement('option');o.value=i+1;o.textContent=m;if(i+1===now.getMonth()+1)o.selected=true;el.appendChild(o);});
+    else for(let y=now.getFullYear();y>=2024;y--){const o=document.createElement('option');o.value=y;o.textContent=y;if(y===now.getFullYear())o.selected=true;el.appendChild(o);}
+  });
+}
+function getM(id){return parseInt(document.getElementById(id).value);}
+function getY(id){return parseInt(document.getElementById(id).value);}
+
+/* ─── DASHBOARD ─── */
+function renderDash(){
+  const sorted=DB.runs.slice().sort((a,b)=>b.period_year-a.period_year||b.period_month-a.period_month);
+  const last=sorted[0];
+  document.getElementById('dash-s').textContent='Latest: '+(last?MONTHS[last.period_month-1]+' '+last.period_year:'no runs yet');
+  const lastLines=last?DB.lines.filter(l=>l.run_id===last.id):[];
+  const totalDed=lastLines.reduce((s,l)=>s+(l.advances||0),0);
+  const pendingTrips=DB.trips.filter(t=>!DB.runs.find(r=>r.period_month===t.period_month&&r.period_year===t.period_year));
+  const empWithEmail=DB.employees.filter(e=>e.email&&e.email.includes('@')).length;
+  const ledgerOut=DB.ledger.filter(l=>l.status!=='cleared').reduce((s,l)=>s+(l.balance||0),0);
+  document.getElementById('dash-m').innerHTML=`
+    <div class="metric"><div class="metric-l">Employees</div><div class="metric-v">${DB.employees.length}</div><div class="metric-s">${DB.employees.filter(e=>e.basic_salary>0).length} active · ${empWithEmail} with email</div></div>
+    <div class="metric"><div class="metric-l">Last net payroll</div><div class="metric-v" style="font-size:17px">${last?aed(last.total_net):'—'}</div><div class="metric-s">${last?MONTHS[last.period_month-1]+' '+last.period_year:'—'}</div></div>
+    <div class="metric"><div class="metric-l">Trips this month</div><div class="metric-v">${pendingTrips.length}</div><div class="metric-s">${DB.trips.length} total logged</div></div>
+    <div class="metric"><div class="metric-l">Ledger outstanding</div><div class="metric-v" style="font-size:${ledgerOut>0?'17':'22'}px;color:${ledgerOut>0?'var(--red-text)':'var(--text-3)'}">${ledgerOut>0?aed(ledgerOut):'None'}</div><div class="metric-s">${DB.ledger.filter(l=>l.status!=='cleared').length} active payables</div></div>`;
+  if(!sorted.length){
+    document.getElementById('dash-r').innerHTML=`
+    <div style="padding:1.5rem">
+      <div style="font-size:14px;font-weight:600;margin-bottom:1rem">Get started in 4 steps</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;gap:12px;align-items:flex-start;padding:12px;background:var(--bg);border-radius:var(--r);border:1px solid var(--border)">
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-fg);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">1</div>
+          <div>
+            <div style="font-weight:500;font-size:13px">Employees & rates are pre-loaded</div>
+            <div style="font-size:12px;color:var(--text-2);margin-top:2px">All 11 employees and commission rates from your Excel file are already in the system. Go to <strong>Employees</strong> to add email addresses for salary slip delivery.</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;padding:12px;background:var(--bg);border-radius:var(--r);border:1px solid var(--border)">
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-fg);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">2</div>
+          <div>
+            <div style="font-weight:500;font-size:13px">Log trips for the month</div>
+            <div style="font-size:12px;color:var(--text-2);margin-top:2px">Go to <strong>Trip log</strong> → Add trip (or paste from Excel). Select driver and route — commission calculates automatically from the rate card.</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;padding:12px;background:var(--bg);border-radius:var(--r);border:1px solid var(--border)">
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-fg);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">3</div>
+          <div>
+            <div style="font-weight:500;font-size:13px">Add deductions if any</div>
+            <div style="font-size:12px;color:var(--text-2);margin-top:2px">Go to <strong>Deductions</strong> for fines, advances, or unpaid leave. Attach supporting documents (PDF, image) against each entry. Or add payables with monthly EMI recovery in <strong>Employee ledger</strong>.</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;padding:12px;background:var(--bg);border-radius:var(--r);border:1px solid var(--border)">
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-fg);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">4</div>
+          <div>
+            <div style="font-weight:500;font-size:13px">Run payroll & send slips</div>
+            <div style="font-size:12px;color:var(--text-2);margin-top:2px">Go to <strong>Run payroll</strong> → trip commissions and deductions auto-populate → confirm days worked → <strong>Save & generate slips</strong>. Salary slips are emailed automatically to employees with email addresses on file.</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:1rem;padding:10px 12px;background:var(--blue-bg);border-radius:var(--r);font-size:12px;color:var(--blue-text)">
+        <strong>Already have Excel data?</strong> Go to <strong>Import Excel</strong> in the sidebar → upload your Salary_Jun_2026.xlsx → employees, rates, trips and deductions are imported automatically.
+      </div>
+    </div>`;
+    return;
+  }
+  document.getElementById('dash-r').innerHTML=`<div class="tw"><table><thead><tr><th>Period</th><th>Employees paid</th><th>Total net</th><th>Total gross</th><th></th></tr></thead><tbody>${
+    sorted.slice(0,8).map(r=>`<tr><td style="font-weight:500">${MONTHS[r.period_month-1]} ${r.period_year}</td><td>${r.employee_count}</td><td>${aed(r.total_net)}</td><td>${aed(r.total_gross)}</td>
+    <td><button class="btn xs" onclick="viewRun('${r.id}')">View slips</button></td></tr>`).join('')}</tbody></table></div>`;
+}
+
+/* ─── TRIP LOG ─── */
+function renderTrips(){
+  const m=getM('trip-month'),y=getY('trip-year');
+  const trips=DB.trips.filter(t=>t.period_month===m&&t.period_year===y);
+  document.getElementById('trips-s').textContent=`${MONTHS[m-1]} ${y} · ${trips.length} trip${trips.length!==1?'s':''} · Total comm: ${aed(trips.reduce((s,t)=>s+(t.trip_comm||0),0))}`;
+  if(!trips.length){document.getElementById('trips-list').innerHTML='<div class="empty">No trips logged for '+MONTHS[m-1]+' '+y+'. Click "Add trip" to start.</div>';return;}
+  // group by driver
+  const byDriver={};
+  DB.employees.forEach(e=>{byDriver[e.id]={emp:e,trips:[]};});
+  trips.forEach(t=>{if(byDriver[t.employee_id])byDriver[t.employee_id].trips.push(t);});
+  document.getElementById('trips-list').innerHTML=Object.values(byDriver).filter(d=>d.trips.length).map(d=>{
+    const totalComm=d.trips.reduce((s,t)=>s+(t.trip_comm||0),0);
+    const totalExp=d.trips.reduce((s,t)=>s+(t.border_exp||0)+(t.diesel_exp||0)+(t.other_exp||0),0);
+    const totalAll=d.trips.reduce((s,t)=>s+(t.total||0),0);
+    return `<div class="tl-driver-block">
+      <div class="tl-driver-hd">
+        <div><div class="tl-driver-name">${d.emp.name}</div><span class="badge ${d.emp.sheet==='Driver'?'b-dr':'b-st'}" style="margin-top:3px">${d.emp.sheet}</span></div>
+        <div class="tl-summary"><span>${d.trips.length} trip${d.trips.length!==1?'s':''}</span><span>Comm: <strong>${aed(totalComm)}</strong></span><span>Exp: <strong>${aed(totalExp)}</strong></span><span>Total: <strong>${aed(totalAll)}</strong></span></div>
+      </div>
+      <div class="tw" style="border:none;border-radius:0"><table>
+        <thead><tr><th>Date</th><th>Truck</th><th>Route</th><th>From</th><th>To</th><th>Trip comm</th><th>Border</th><th>Diesel</th><th>Other</th><th>Total</th><th>Notes</th><th></th></tr></thead>
+        <tbody>${d.trips.sort((a,b)=>a.trip_date>b.trip_date?1:-1).map(t=>`<tr>
+          <td>${t.trip_date||'—'}</td>
+          <td class="mono">${t.truck||'—'}</td>
+          <td><span class="tag" style="background:var(--blue-bg);color:var(--blue-text)">${t.route||'—'}</span></td>
+          <td style="font-size:12px">${t.from_loc||'—'}</td>
+          <td style="font-size:12px">${t.to_loc||'—'}</td>
+          <td>${num(t.trip_comm)}</td>
+          <td style="color:var(--text-2)">${t.border_exp>0?num(t.border_exp):'—'}</td>
+          <td style="color:var(--text-2)">${t.diesel_exp>0?num(t.diesel_exp):'—'}</td>
+          <td style="color:var(--text-2)">${t.other_exp>0?num(t.other_exp):'—'}</td>
+          <td style="font-weight:600">${aed(t.total)}</td>
+          <td style="font-size:11px;color:var(--text-2)">${t.notes||'—'}</td>
+          <td><div style="display:flex;gap:4px"><button class="btn xs" onclick="editTrip('${t.id}')">Edit</button><button class="btn xs dan" onclick="delTrip('${t.id}')">Del</button></div></td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>`;
+  }).join('');
+}
+
+function openTripModal(){
+  clearTripForm();
+  populateTripDropdowns();
+  document.getElementById('tr-date').value=now.toISOString().slice(0,10);
+  document.getElementById('modal-trip').classList.add('open');
+}
+
+function editTrip(id){
+  const t=DB.trips.find(x=>x.id===id);if(!t)return;
+  populateTripDropdowns();
+  document.getElementById('trip-id').value=t.id;
+  document.getElementById('tr-date').value=t.trip_date||'';
+  document.getElementById('tr-driver').value=t.employee_id;
+  document.getElementById('tr-truck').value=t.truck||'';
+  document.getElementById('tr-route').value=t.route||'';
+  document.getElementById('tr-comm').value=t.trip_comm||0;
+  document.getElementById('tr-border').value=t.border_exp||0;
+  document.getElementById('tr-diesel').value=t.diesel_exp||0;
+  document.getElementById('tr-other').value=t.other_exp||0;
+  document.getElementById('tr-from').value=t.from_loc||'';
+  document.getElementById('tr-to').value=t.to_loc||'';
+  document.getElementById('tr-total').value=t.total||0;
+  document.getElementById('tr-notes').value=t.notes||'';
+  document.getElementById('modal-trip').classList.add('open');
+}
+
+function clearTripForm(){
+  document.getElementById('trip-id').value='';
+  ['tr-truck','tr-from','tr-to','tr-notes'].forEach(id=>document.getElementById(id).value='');
+  ['tr-border','tr-diesel','tr-other'].forEach(id=>document.getElementById(id).value='0');
+  document.getElementById('tr-comm').value='';document.getElementById('tr-total').value='';
+}
+
+function populateTripDropdowns(){
+  const dSel=document.getElementById('tr-driver');
+  dSel.innerHTML=DB.employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
+  const rSel=document.getElementById('tr-route');
+  rSel.innerHTML=DB.rates.map(r=>`<option value="${r.route}">${r.customer?r.customer+' · ':''} ${r.route} (AED ${r.rate})</option>`).join('');
+  fillTripComm();
+}
+
+function fillTripComm(){
+  const route=document.getElementById('tr-route').value;
+  const rate=DB.rates.find(r=>r.route===route);
+  document.getElementById('tr-comm').value=rate?rate.rate:0;
+  calcTripTotal();
+}
+
+function calcTripTotal(){
+  const comm=parseFloat(document.getElementById('tr-comm').value)||0;
+  const b=parseFloat(document.getElementById('tr-border').value)||0;
+  const d=parseFloat(document.getElementById('tr-diesel').value)||0;
+  const o=parseFloat(document.getElementById('tr-other').value)||0;
+  document.getElementById('tr-total').value=(comm+b+d+o).toFixed(2);
+}
+
+function saveTrip(){
+  const m=getM('trip-month'),y=getY('trip-year');
+  const id=document.getElementById('trip-id').value;
+  const empId=document.getElementById('tr-driver').value;
+  const emp=DB.employees.find(e=>e.id===empId);
+  const route=document.getElementById('tr-route').value;
+  const rateObj=DB.rates.find(r=>r.route===route);
+  const t={
+    id:id||uid(),period_month:m,period_year:y,
+    employee_id:empId,employee_name:emp?.name||'',
+    trip_date:document.getElementById('tr-date').value,
+    truck:document.getElementById('tr-truck').value,
+    route:route,customer:rateObj?.customer||'',
+    trip_comm:parseFloat(document.getElementById('tr-comm').value)||0,
+    border_exp:parseFloat(document.getElementById('tr-border').value)||0,
+    diesel_exp:parseFloat(document.getElementById('tr-diesel').value)||0,
+    other_exp:parseFloat(document.getElementById('tr-other').value)||0,
+    total:parseFloat(document.getElementById('tr-total').value)||0,
+    from_loc:document.getElementById('tr-from').value,
+    to_loc:document.getElementById('tr-to').value,
+    notes:document.getElementById('tr-notes').value,
+  };
+  if(id)DB.trips=DB.trips.map(x=>x.id===id?t:x);else DB.trips.push(t);
+  save();closeM('modal-trip');renderTrips();
+}
+
+function delTrip(id){if(confirm('Delete this trip?')){DB.trips=DB.trips.filter(t=>t.id!==id);save();renderTrips();}}
+
+/* ─── DEDUCTIONS ─── */
+function renderDeds(){
+  const m=getM('ded-month'),y=getY('ded-year');
+  const deds=DB.deds.filter(d=>d.period_month===m&&d.period_year===y);
+  const total=deds.reduce((s,d)=>s+(d.amount||0),0);
+  if(!deds.length){document.getElementById('ded-list').innerHTML='<div class="empty">No deductions for '+MONTHS[m-1]+' '+y+'.</div>';return;}
+  // group by employee
+  const byEmp={};
+  DB.employees.forEach(e=>{byEmp[e.id]={emp:e,deds:[]};});
+  deds.forEach(d=>{if(byEmp[d.employee_id])byEmp[d.employee_id].deds.push(d);});
+  document.getElementById('ded-list').innerHTML=`<div style="margin-bottom:.75rem;font-size:13px;color:var(--text-2)">Total deductions: <strong style="color:var(--red-text)">${aed(total)}</strong></div>`+
+  Object.values(byEmp).filter(d=>d.deds.length).map(d=>{
+    const empTotal=d.deds.reduce((s,x)=>s+(x.amount||0),0);
+    return `<div class="tl-driver-block">
+      <div class="tl-driver-hd">
+        <div><div class="tl-driver-name">${d.emp.name}</div></div>
+        <div class="tl-summary"><span>Total: <strong style="color:var(--red-text)">(${aed(empTotal)})</strong></span></div>
+      </div>
+      <div class="tw" style="border:none;border-radius:0"><table>
+        <thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Reference</th><th>Traffic pts</th><th>Amount</th><th>Attachment</th><th></th></tr></thead>
+        <tbody>${d.deds.sort((a,b)=>a.ded_date>b.ded_date?1:-1).map(x=>`<tr>
+          <td>${x.ded_date||'—'}</td>
+          <td><span class="badge ${catClass(x.category)}">${catLabel(x.category)}</span></td>
+          <td style="max-width:220px">${x.description||'—'}</td>
+          <td class="mono" style="font-size:11px">${x.reference||'—'}</td>
+          <td style="text-align:center">${x.traffic_points>0?x.traffic_points:'—'}</td>
+          <td style="font-weight:600;color:var(--red-text)">(${aed(x.amount)})</td>
+          <td>${x.attachment?`<button class="btn xs" onclick="viewDedAttach('${x.id}')" style="color:var(--blue-text)"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> View</button>`:'<span style="color:var(--text-3);font-size:11px">—</span>'}</td><td><div style="display:flex;gap:4px"><button class="btn xs" onclick="editDedWithAttach('${x.id}')">Edit</button><button class="btn xs dan" onclick="delDed('${x.id}')">Del</button></div></td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>`;
+  }).join('');
+}
+
+function openDedModal(){
+  clearDedForm();
+  const dSel=document.getElementById('dd-emp');
+  dSel.innerHTML=DB.employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
+  document.getElementById('dd-date').value=now.toISOString().slice(0,10);
+  document.getElementById('modal-ded').classList.add('open');
+}
+function editDedWithAttach(id){
+  editDed(id);
+  // Restore attachment preview if exists
+  const d=DB.deds.find(x=>x.id===id);
+  if(d&&d.attachment){
+    _dedAttach=d.attachment;
+    showDedAttachPreview(d.attachment.name,d.attachment.size);
+  }
+}
+
+function editDed(id){
+  const d=DB.deds.find(x=>x.id===id);if(!d)return;
+  const dSel=document.getElementById('dd-emp');
+  dSel.innerHTML=DB.employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
+  document.getElementById('ded-id').value=d.id;
+  document.getElementById('dd-emp').value=d.employee_id;
+  document.getElementById('dd-date').value=d.ded_date||'';
+  document.getElementById('dd-cat').value=d.category||'fine';
+  document.getElementById('dd-amount').value=d.amount||0;
+  document.getElementById('dd-desc').value=d.description||'';
+  document.getElementById('dd-ref').value=d.reference||'';
+  document.getElementById('dd-pts').value=d.traffic_points||0;
+  document.getElementById('modal-ded').classList.add('open');
+}
+
+function clearDedForm(){
+  document.getElementById('ded-id').value='';
+  ['dd-amount','dd-pts'].forEach(id=>document.getElementById(id).value='');
+  ['dd-desc','dd-ref'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('dd-cat').value='fine';
+  clearDedAttach();
+}
+
+function saveDed(){
+  const m=getM('ded-month'),y=getY('ded-year');
+  const id=document.getElementById('ded-id').value;
+  const empId=document.getElementById('dd-emp').value;
+  const emp=DB.employees.find(e=>e.id===empId);
+  const d={
+    id:id||uid(),period_month:m,period_year:y,
+    employee_id:empId,employee_name:emp?.name||'',
+    ded_date:document.getElementById('dd-date').value,
+    category:document.getElementById('dd-cat').value,
+    description:document.getElementById('dd-desc').value,
+    reference:document.getElementById('dd-ref').value,
+    amount:parseFloat(document.getElementById('dd-amount').value)||0,
+    traffic_points:parseInt(document.getElementById('dd-pts').value)||0,
+    attachment: _dedAttach || (id ? (DB.deds.find(x=>x.id===id)?.attachment||null) : null),
+  };
+  if(id)DB.deds=DB.deds.map(x=>x.id===id?d:x);else DB.deds.push(d);
+  _dedAttach=null;
+  save();closeM('modal-ded');renderDeds();
+}
+
+function delDed(id){if(confirm('Delete this deduction?')){DB.deds=DB.deds.filter(d=>d.id!==id);save();renderDeds();}}
+
+/* ─── RUN PAYROLL ─── */
+function renderRun(){
+  buildRunTable();
+}
+
+function buildRunTable(){
+  const m=getM('run-month'),y=getY('run-year');
+  const existRun=DB.runs.find(r=>r.period_month===m&&r.period_year===y);
+  const existLines=existRun?DB.lines.filter(l=>l.run_id===existRun.id):[];
+  runOverrides={};
+  DB.employees.forEach(e=>{
+    const ex=existLines.find(l=>l.employee_id===e.id);
+    // Auto-calculate from trip log
+    const empTrips=DB.trips.filter(t=>t.period_month===m&&t.period_year===y&&t.employee_id===e.id);
+    const autoTrip=empTrips.reduce((s,t)=>s+(t.trip_comm||0),0);
+    // Auto-calculate deductions
+    const empDeds=DB.deds.filter(d=>d.period_month===m&&d.period_year===y&&d.employee_id===e.id);
+    const autoDed=empDeds.reduce((s,d)=>s+(d.amount||0),0);
+    const dedNotes=empDeds.map(d=>`${catLabel(d.category)}: ${d.description}`).join('; ');
+    // Add ledger EMI recoveries for this period
+    const empLedger = DB.ledger.filter(l=>l.employee_id===e.id&&l.balance>0);
+    const alreadyRecovered = DB.recoveries.filter(r=>r.period_month===m&&r.period_year===y&&r.employee_id===e.id);
+    const ledgerEMI = empLedger.reduce((s,l)=>{
+      const alreadyRec = alreadyRecovered.find(r=>r.ledger_id===l.id);
+      if(alreadyRec) return s + alreadyRec.amount;
+      return s + Math.min(l.emi||0, l.balance||0);
+    }, 0);
+    const ledgerNotes = empLedger.filter(l=>l.balance>0).map(l=>`${l.type_label}: ${l.description} (bal: AED ${l.balance.toFixed(2)})`).join('; ');
+    const totalDed = autoDed + ledgerEMI;
+    const allDedNotes = [dedNotes, ledgerNotes].filter(Boolean).join('; ');
+
+    runOverrides[e.id]=ex?{...ex}:{
+      employee_id:e.id,employee_name:e.name,
+      total_days:30,worked_days:e.basic_salary>0?30:0,
+      basic_salary:e.basic_salary,
+      trip_commission:autoTrip,other_commission:0,
+      advances:totalDed,deduction_notes:allDedNotes,
+    };
+  });
+  document.getElementById('run-tw').innerHTML=`<table>
+    <thead><tr><th style="min-width:160px">Employee</th><th>Days</th><th>Basic (auto)</th><th>Trip comm<br><span style="font-weight:400;font-size:10px">from trip log</span></th><th>Other comm</th><th>Deductions<br><span style="font-weight:400;font-size:10px">from deductions</span></th><th>Notes</th><th style="text-align:right">Net payable</th><th></th></tr></thead>
+    <tbody id="run-tb"></tbody>
+    <tfoot><tr style="background:var(--bg)"><td colspan="7" style="padding:9px 12px;font-weight:600;font-size:12px;color:var(--text-2)">Total</td><td style="padding:9px 12px;text-align:right;font-weight:600" id="run-tot">—</td><td></td></tr></tfoot>
+  </table>`;
+  renderRunRows();
+}
+
+function renderRunRows(){
+  const tb=document.getElementById('run-tb');if(!tb)return;
+  tb.innerHTML=DB.employees.map(e=>{
+    const L=runOverrides[e.id];const net=calcNet(L);
+    const hasAutoTrip=DB.trips.some(t=>t.period_month===getM('run-month')&&t.period_year===getY('run-year')&&t.employee_id===e.id);
+    const hasAutoDed=DB.deds.some(d=>d.period_month===getM('run-month')&&d.period_year===getY('run-year')&&d.employee_id===e.id);
+    return `<tr>
+      <td><div style="font-weight:500;font-size:12px">${e.name}</div><span class="badge ${e.sheet==='Driver'?'b-dr':'b-st'}" style="margin-top:3px">${e.sheet}</span></td>
+      <td><input class="ri" type="number" min="0" max="31" value="${L.worked_days}" style="width:55px" oninput="updR('${e.id}','worked_days',this.value)"></td>
+      <td style="font-size:12px;color:var(--text-2)">${num(calcBasic(L))}</td>
+      <td>
+        <input class="ri" type="number" min="0" value="${L.trip_commission||0}" style="width:90px;${hasAutoTrip?'border-color:var(--green-bd);background:#F8FFF8':''}" oninput="updR('${e.id}','trip_commission',this.value)">
+        ${hasAutoTrip?`<div style="font-size:10px;color:var(--green-text);margin-top:2px">auto from trips</div>`:''}
+      </td>
+      <td><input class="ri" type="number" min="0" value="${L.other_commission||0}" style="width:80px" oninput="updR('${e.id}','other_commission',this.value)"></td>
+      <td>
+        <input class="ri" type="number" min="0" value="${L.advances||0}" style="width:80px;${hasAutoDed?'border-color:var(--red-bd);background:#FFF8F8':''}" oninput="updR('${e.id}','advances',this.value)">
+        ${hasAutoDed?`<div style="font-size:10px;color:var(--red-text);margin-top:2px">auto from deds</div>`:''}
+      </td>
+      <td style="max-width:140px"><input class="ri" type="text" value="${L.deduction_notes||''}" style="font-size:11px" oninput="updR('${e.id}','deduction_notes',this.value)"></td>
+      <td style="text-align:right;font-weight:600;font-size:12px" id="net-${e.id}">${net>0?aed(net):'—'}</td>
+      <td><button class="btn xs" onclick="previewSlip('${e.id}')">Preview</button></td>
+    </tr>`;
+  }).join('');
+  updateTot();
+}
+
+function calcBasic(L){const t=L.total_days||30,w=parseInt(L.worked_days)||0;return w>=t?(L.basic_salary||0):((L.basic_salary||0)/t)*w;}
+function calcNet(L){return Math.max(0,calcBasic(L)+(parseFloat(L.trip_commission)||0)+(parseFloat(L.other_commission)||0)-(parseFloat(L.advances)||0));}
+function updR(id,field,val){
+  const L=runOverrides[id];L[field]=isNaN(parseFloat(val))?val:parseFloat(val);
+  const net=calcNet(L);L.net_payable=net;
+  const el=document.getElementById('net-'+id);if(el)el.textContent=net>0?aed(net):'—';
+  updateTot();
+}
+function updateTot(){const t=Object.values(runOverrides).reduce((s,L)=>s+calcNet(L),0);const el=document.getElementById('run-tot');if(el)el.textContent=aed(t);}
+
+async function savePayroll(){
+  const m=getM('run-month'),y=getY('run-year');
+  let run=DB.runs.find(r=>r.period_month===m&&r.period_year===y);
+  if(run){DB.lines=DB.lines.filter(l=>l.run_id!==run.id);}
+  else{run={id:uid(),period_month:m,period_year:y,created_at:new Date().toISOString()};DB.runs.push(run);}
+  const lines=Object.values(runOverrides).map(L=>({...L,id:uid(),run_id:run.id,total_fixed:calcBasic(L),total_variable:(parseFloat(L.trip_commission)||0)+(parseFloat(L.other_commission)||0),net_payable:calcNet(L)}));
+  DB.lines.push(...lines);
+  run.total_net=lines.reduce((s,l)=>s+l.net_payable,0);
+  run.total_gross=lines.reduce((s,l)=>s+calcBasic(l)+l.total_variable,0);
+  run.employee_count=lines.filter(l=>l.net_payable>0).length;
+  // Auto-record ledger recoveries for this period
+  lines.forEach(L=>{
+    const empLedger=DB.ledger.filter(l=>l.employee_id===L.employee_id&&l.balance>0);
+    empLedger.forEach(l=>{
+      const already=DB.recoveries.find(r=>r.ledger_id===l.id&&r.period_month===m&&r.period_year===y);
+      if(already) return;
+      const recAmt=Math.min(l.emi||0,l.balance||0);
+      if(recAmt<=0) return;
+      const rec={id:uid(),ledger_id:l.id,employee_id:l.employee_id,employee_name:l.employee_name,
+        period_month:m,period_year:y,amount:recAmt,notes:'Auto-recorded from payroll run',
+        created_at:new Date().toISOString()};
+      DB.recoveries.push(rec);
+      // Update balance
+      l.balance=Math.max(0,l.balance-recAmt);
+      if(l.balance===0) l.status='cleared';
+    });
+  });
+
+  save();
+  if(sbUrl&&sbKey) await pushSB(run,lines);
+
+  // Auto-send salary slips to employees with email on file
+  const withEmail = lines.filter(L=>{
+    const e=DB.employees.find(x=>x.id===L.employee_id);
+    return e && e.email && e.email.includes('@');
+  });
+
+  if(withEmail.length){
+    const doSend = confirm(`Payroll saved.\n\n${withEmail.length} employee${withEmail.length>1?'s have':' has'} an email address on file.\n\nSend salary slips now?`);
+    if(doSend) await sendSlipsForRun(run, lines, `${MONTHS[m-1]} ${y}`);
+    else alert(`Payroll for ${MONTHS[m-1]} ${y} saved.\n${run.employee_count} employees · ${aed(run.total_net)} net.\n\nYou can send slips later from the History page.`);
+  } else {
+    alert(`Payroll for ${MONTHS[m-1]} ${y} saved.\n${run.employee_count} employees · ${aed(run.total_net)} net.\n\nNo employee emails on file. Add emails in the Employees page to enable auto-sending.`);
+  }
+}
+
+/* ─── SLIPS ─── */
+function buildSlip(e,L,period){
+  const co=DB.company;const wps=co.wps||5,vat=co.vat||0.25;
+  const basic=typeof L.total_fixed==='number'?L.total_fixed:calcBasic(L);
+  const trip=parseFloat(L.trip_commission)||0;
+  const other=parseFloat(L.other_commission)||0;
+  const adv=parseFloat(L.advances)||0;
+  const net=parseFloat(L.net_payable)||calcNet(L);
+  const grand=net>0?net+wps+vat:0;
+  const m=L.period_month,y=L.period_year;
+  // Get detailed trip lines and ded lines for memo
+  const tripLines=m&&y?DB.trips.filter(t=>t.period_month===m&&t.period_year===y&&t.employee_id===(e.id||L.employee_id)):[];
+  const dedLines=m&&y?DB.deds.filter(d=>d.period_month===m&&d.period_year===y&&d.employee_id===(e.id||L.employee_id)):[];
+  return `<div class="slip">
+    <div class="slip-hd">
+      <div><div class="slip-co">${co.name}</div><div class="slip-addr">${co.addr}</div></div>
+      <div style="text-align:right"><div style="font-size:12px;font-weight:600">Salary slip</div><div style="font-size:10px;color:var(--text-2)">${period}</div></div>
+    </div>
+    <div class="slip-grid">
+      <div class="sf"><label>Employee</label><span>${e.name||L.employee_name}</span></div>
+      <div class="sf"><label>Designation</label><span>${e.designation||'—'}</span></div>
+      <div class="sf"><label>Work permit</label><span class="mono">${e.work_permit||'—'}</span></div>
+      <div class="sf"><label>Labor card</label><span class="mono">${e.labor_card||'—'}</span></div>
+      <div class="sf" style="grid-column:span 2"><label>IBAN</label><span class="mono">${e.iban||'—'}</span></div>
+      <div class="sf"><label>Days worked</label><span>${L.worked_days||0} / ${L.total_days||30}</span></div>
+      <div class="sf"><label>Absence</label><span>${(L.total_days||30)-(L.worked_days||0)}</span></div>
+    </div>
+    <div class="slip-sec">Section A — Fixed salary</div>
+    <div class="sr"><span>Basic salary</span><span>${num(basic)}</span></div>
+    <div class="sr tot"><span>Total fixed</span><span>${num(basic)}</span></div>
+    <div class="slip-sec">Section B — Variable earnings</div>
+    <div class="sr"><span>Trip commissions</span><span>${num(trip)}</span></div>
+    <div class="sr"><span>Other commissions</span><span>${num(other)}</span></div>
+    <div class="sr tot"><span>Total variable</span><span>${num(trip+other)}</span></div>
+    ${adv>0?`<div class="slip-sec">Section C — Deductions</div>${dedLines.length?dedLines.map(d=>`<div class="sr neg"><span>${catLabel(d.category)}: ${d.description}${d.reference?' ['+d.reference+']':''}</span><span>(${num(d.amount)})</span></div>`).join(''):`<div class="sr neg"><span>${L.deduction_notes||'Advances / deductions'}</span><span>(${num(adv)})</span></div>`}<div class="sr tot neg"><span>Total deductions</span><span>(${num(adv)})</span></div>`:''}
+    <div class="slip-sec">Summary</div>
+    <div class="sr"><span>Total earnings (A + B)</span><span>${num(basic+trip+other)}</span></div>
+    ${adv>0?`<div class="sr neg"><span>Less: deductions</span><span>(${num(adv)})</span></div>`:''}
+    <div class="sr"><span>WPS commission</span><span>${num(wps)}</span></div>
+    <div class="sr"><span>VAT</span><span>${num(vat)}</span></div>
+    <div class="slip-net"><span class="slip-net-l">Net payable</span><span class="slip-net-v">${net>0?aed(grand):'AED 0.00'}</span></div>
+    ${(tripLines.length||dedLines.length||trip||adv)?`<div class="slip-memo">
+      <div class="slip-memo-t">Additional memo — commission & deduction detail</div>
+      ${tripLines.length?`<div style="font-size:10px;font-weight:600;color:var(--text-2);margin:5px 0 3px">Trips</div>${tripLines.map(t=>`<div class="slip-memo-r"><span>${t.trip_date} · ${t.route}${t.truck?' · '+t.truck:''}${t.from_loc?' · '+t.from_loc+' → '+t.to_loc:''}</span><span>${num(t.trip_comm)}</span></div>`).join('')}`
+        :(trip?`<div class="slip-memo-r"><span>Trip commissions</span><span>${num(trip)}</span></div>`:'')
+      }
+      ${other?`<div class="slip-memo-r"><span>Other commissions</span><span>${num(other)}</span></div>`:''}
+      ${dedLines.length?`<div style="font-size:10px;font-weight:600;color:var(--text-2);margin:5px 0 3px">Deductions</div>${dedLines.map(d=>`<div class="slip-memo-r neg"><span><span class="tag ${catClass(d.category)}" style="margin-right:4px">${catLabel(d.category)}</span>${d.ded_date?' '+d.ded_date+' ·':''} ${d.description}${d.reference?' ['+d.reference+']':''}${d.traffic_points>0?' ('+d.traffic_points+' pts)':''}</span><span>(${num(d.amount)})</span></div>`).join('')}`
+        :(adv?`<div class="slip-memo-r neg"><span>${L.deduction_notes||'Deductions'}</span><span>(${num(adv)})</span></div>`:'')
+      }
+      <div class="slip-disc">Variable incentives are performance-based and discretionary. Fixed salary paid through WPS per MOHRE employment contract. Fines and advances offset against variable earnings only.</div>
+    </div>`:''}
+  </div>`;
+}
+
+function previewSlip(empId){
+  const e=DB.employees.find(x=>x.id===empId)||{};
+  const L={...runOverrides[empId]||{}};
+  L.period_month=getM('run-month');L.period_year=getY('run-year');
+  const m=getM('run-month'),y=getY('run-year');
+  document.getElementById('slip-t').textContent=e.name;
+  document.getElementById('slip-c').innerHTML=buildSlip(e,L,`${MONTHS[m-1]} ${y}`);
+  document.getElementById('modal-slip').classList.add('open');
+}
+
+function previewAll(){
+  const m=getM('run-month'),y=getY('run-year');const period=`${MONTHS[m-1]} ${y}`;
+  document.getElementById('all-t').textContent=`All salary slips — ${period}`;
+  document.getElementById('all-c').innerHTML=DB.employees.map(e=>{
+    const L={...runOverrides[e.id]||{},period_month:m,period_year:y};
+    return `<div style="margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)">${buildSlip(e,L,period)}</div>`;
+  }).join('');
+  document.getElementById('modal-all').classList.add('open');
+}
+
+function viewRun(runId){
+  const run=DB.runs.find(r=>r.id===runId);if(!run)return;
+  const lines=DB.lines.filter(l=>l.run_id===runId);
+  const period=`${MONTHS[run.period_month-1]} ${run.period_year}`;
+  document.getElementById('all-t').textContent=`All salary slips — ${period}`;
+  document.getElementById('all-c').innerHTML=lines.map(L=>{
+    const e=DB.employees.find(x=>x.id===L.employee_id)||{name:L.employee_name,designation:'',work_permit:'',labor_card:'',iban:''};
+    return `<div style="margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)">${buildSlip(e,{...L,period_month:run.period_month,period_year:run.period_year},period)}</div>`;
+  }).join('');
+  document.getElementById('modal-all').classList.add('open');
+}
+
+/* ─── HISTORY ─── */
+function renderHistory(){
+  const sorted=DB.runs.slice().sort((a,b)=>b.period_year-a.period_year||b.period_month-a.period_month);
+  if(!sorted.length){document.getElementById('history-list').innerHTML='<div class="empty">No payroll history yet.</div>';return;}
+  document.getElementById('history-list').innerHTML=sorted.map(r=>`
+    <div class="hc">
+      <div class="hh" onclick="toggleH('${r.id}')">
+        <div><div style="font-weight:600">${MONTHS[r.period_month-1]} ${r.period_year}</div><div style="font-size:12px;color:var(--text-2);margin-top:2px">${r.employee_count} employees · ${aed(r.total_net)} net</div></div>
+        <div style="display:flex;gap:8px"><button class="btn xs" onclick="event.stopPropagation();viewRun('${r.id}')">View slips</button><button class="btn xs" onclick="event.stopPropagation();sendRunSlips('${r.id}')">Send emails</button><button class="btn xs" onclick="event.stopPropagation();exportRunCSV('${r.id}')">Export CSV</button></div>
+      </div>
+      <div class="hb" id="hb-${r.id}">
+        <div class="tw" style="margin-top:12px"><table><thead><tr><th>Employee</th><th>Days</th><th>Fixed</th><th>Trip comm</th><th>Other</th><th>Deductions</th><th style="text-align:right">Net</th></tr></thead>
+        <tbody>${DB.lines.filter(l=>l.run_id===r.id).map(L=>`<tr>
+          <td style="font-weight:500;font-size:12px">${L.employee_name}</td>
+          <td>${L.worked_days}/${L.total_days}</td>
+          <td>${num(L.total_fixed)}</td>
+          <td>${num(L.trip_commission||0)}</td>
+          <td>${num(L.other_commission||0)}</td>
+          <td style="color:var(--red-text)">${L.advances>0?'('+num(L.advances)+')':'—'}</td>
+          <td style="text-align:right;font-weight:600">${L.net_payable>0?aed(L.net_payable):'—'}</td>
+        </tr>`).join('')}</tbody></table></div>
+      </div>
+    </div>`).join('');
+}
+function toggleH(id){const el=document.getElementById('hb-'+id);if(el)el.classList.toggle('open');}
+
+/* ─── EMPLOYEES ─── */
+function renderEmps(){
+  document.getElementById('emp-s').textContent=DB.employees.length+' employees';
+  document.getElementById('emp-tb').innerHTML=DB.employees.map(e=>`<tr>
+    <td style="font-weight:500">${e.name}</td>
+    <td><span class="badge ${e.sheet==='Driver'?'b-dr':'b-st'}">${e.sheet}</span></td>
+    <td>${e.designation||'—'}</td><td class="mono">${e.work_permit||'—'}</td>
+    <td>${e.basic_salary>0?aed(e.basic_salary):'—'}</td>
+    <td class="mono" style="max-width:130px;overflow:hidden;text-overflow:ellipsis" title="${e.iban}">${e.iban||'—'}</td>
+    <td style="font-size:12px;color:var(--text-2)">${e.email||'—'}</td>
+    <td><div style="display:flex;gap:6px"><button class="btn xs" onclick="editEmp('${e.id}')">Edit</button><button class="btn xs dan" onclick="delEmp('${e.id}')">Del</button></div></td>
+  </tr>`).join('');
+}
+function openEmpModal(){clearEmpF();document.getElementById('emp-mt').textContent='Add employee';document.getElementById('modal-emp').classList.add('open');}
+function clearEmpF(){['emp-id','emp-name','emp-desig','emp-wp','emp-lc','emp-iban','emp-email'].forEach(id=>document.getElementById(id).value='');document.getElementById('emp-basic').value='0';document.getElementById('emp-sheet').value='Driver';}
+function editEmp(id){const e=DB.employees.find(x=>x.id===id);if(!e)return;document.getElementById('emp-id').value=e.id;document.getElementById('emp-name').value=e.name;document.getElementById('emp-sheet').value=e.sheet;document.getElementById('emp-desig').value=e.designation||'';document.getElementById('emp-wp').value=e.work_permit||'';document.getElementById('emp-lc').value=e.labor_card||'';document.getElementById('emp-iban').value=e.iban||'';document.getElementById('emp-basic').value=e.basic_salary||0;document.getElementById('emp-email').value=e.email||'';document.getElementById('emp-mt').textContent='Edit employee';document.getElementById('modal-emp').classList.add('open');}
+function saveEmp(){const id=document.getElementById('emp-id').value;const e={id:id||uid(),name:document.getElementById('emp-name').value,sheet:document.getElementById('emp-sheet').value,designation:document.getElementById('emp-desig').value,work_permit:document.getElementById('emp-wp').value,labor_card:document.getElementById('emp-lc').value,iban:document.getElementById('emp-iban').value,basic_salary:parseFloat(document.getElementById('emp-basic').value)||0,email:document.getElementById('emp-email').value};if(id)DB.employees=DB.employees.map(x=>x.id===id?e:x);else DB.employees.push(e);save();closeM('modal-emp');renderEmps();}
+function delEmp(id){if(confirm('Delete?')){DB.employees=DB.employees.filter(e=>e.id!==id);save();renderEmps();}}
+
+/* ─── RATES ─── */
+function renderRates(){document.getElementById('rates-tb').innerHTML=DB.rates.map(r=>`<tr><td>${r.customer||'—'}</td><td style="font-weight:500">${r.route}</td><td>${aed(r.rate)}</td><td><div style="display:flex;gap:6px"><button class="btn xs" onclick="editRate('${r.id}')">Edit</button><button class="btn xs dan" onclick="delRate('${r.id}')">Del</button></div></td></tr>`).join('');}
+function openRateModal(){document.getElementById('rate-id').value='';document.getElementById('rate-cust').value='';document.getElementById('rate-route').value='';document.getElementById('rate-amt').value='';document.getElementById('modal-rate').classList.add('open');}
+function editRate(id){const r=DB.rates.find(x=>x.id===id);if(!r)return;document.getElementById('rate-id').value=r.id;document.getElementById('rate-cust').value=r.customer||'';document.getElementById('rate-route').value=r.route;document.getElementById('rate-amt').value=r.rate;document.getElementById('modal-rate').classList.add('open');}
+function saveRate(){const id=document.getElementById('rate-id').value;const r={id:id||uid(),customer:document.getElementById('rate-cust').value,route:document.getElementById('rate-route').value,rate:parseFloat(document.getElementById('rate-amt').value)||0};if(id)DB.rates=DB.rates.map(x=>x.id===id?r:x);else DB.rates.push(r);save();closeM('modal-rate');renderRates();}
+function delRate(id){if(confirm('Delete?')){DB.rates=DB.rates.filter(r=>r.id!==id);save();renderRates();}}
+
+/* ─── SETTINGS ─── */
+function loadSettings(){
+  sbUrl=localStorage.getItem('sb_url')||'';sbKey=localStorage.getItem('sb_key')||'';
+  document.getElementById('sb-url').value=sbUrl;document.getElementById('sb-key').value=sbKey;
+  document.getElementById('co-name').value=DB.company.name;document.getElementById('co-addr').value=DB.company.addr;
+  document.getElementById('co-wps').value=DB.company.wps;document.getElementById('co-vat').value=DB.company.vat;
+  document.getElementById('schema-sql').textContent=SCHEMA;
+}
+function saveSB(){sbUrl=document.getElementById('sb-url').value.trim();sbKey=document.getElementById('sb-key').value.trim();localStorage.setItem('sb_url',sbUrl);localStorage.setItem('sb_key',sbKey);}
+function toggleSchema(){const el=document.getElementById('sb-schema');el.style.display=el.style.display==='none'?'block':'none';}
+function copySchema(){navigator.clipboard.writeText(SCHEMA).then(()=>alert('Copied.'));}
+function saveCo(){DB.company={name:document.getElementById('co-name').value,addr:document.getElementById('co-addr').value,wps:parseFloat(document.getElementById('co-wps').value)||5,vat:parseFloat(document.getElementById('co-vat').value)||0.25};save();alert('Saved.');}
+
+async function testSB(){
+  if(!sbUrl||!sbKey){alert('Enter URL and key first.');return;}
+  setSt('Testing…','');
+  try{const r=await fetch(`${sbUrl}/rest/v1/employees?select=id&limit=1`,{headers:{apikey:sbKey,Authorization:'Bearer '+sbKey}});
+    if(r.ok){setSt('Connected.','ok');setDot(true);}
+    else if(r.status===404){setSt('Connected — tables not found. Click "Run schema".','warn');setDot(true);}
+    else{setSt(`Failed: ${r.status} ${r.statusText}`,'err');setDot(false);}
+  }catch(e){setSt('Error: '+e.message,'err');setDot(false);}
+}
+
+async function runSchema(){
+  if(!sbUrl||!sbKey){alert('Enter URL and key first.');return;}
+  if(!confirm('Create tables in your Supabase project?'))return;
+  setSt('Running…','');
+  try{
+    const stmts=SCHEMA.split(';').map(s=>s.trim()).filter(s=>s&&!s.startsWith('--'));
+    for(const sql of stmts){if(!sql)continue;await fetch(`${sbUrl}/rest/v1/rpc/exec_sql`,{method:'POST',headers:{apikey:sbKey,Authorization:'Bearer '+sbKey,'Content-Type':'application/json'},body:JSON.stringify({query:sql+';'})});}
+    setSt('Done. Run "Test connection" to verify.','ok');
+  }catch(e){setSt('Could not auto-run. Copy SQL → Supabase SQL editor → run manually.','warn');}
+}
+
+function setSt(msg,type){const c={ok:'var(--green-text)',err:'var(--red-text)',warn:'var(--amber-text)','':'var(--text-2)'};document.getElementById('sb-st').innerHTML=`<span style="color:${c[type]}">${msg}</span>`;}
+function setDot(ok){document.getElementById('conn-dot').className='dot '+(ok?'ok':'err');document.getElementById('conn-lbl').textContent=ok?'Connected':'Error';}
+
+async function pushSB(run,lines){
+  const h={apikey:sbKey,Authorization:'Bearer '+sbKey,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
+  try{
+    await fetch(`${sbUrl}/rest/v1/payroll_runs`,{method:'POST',headers:h,body:JSON.stringify(run)});
+    for(const L of lines)await fetch(`${sbUrl}/rest/v1/payroll_lines`,{method:'POST',headers:h,body:JSON.stringify(L)});
+    // Also push trips and deductions
+    const m=run.period_month,y=run.period_year;
+    for(const t of DB.trips.filter(x=>x.period_month===m&&x.period_year===y))await fetch(`${sbUrl}/rest/v1/trip_log`,{method:'POST',headers:h,body:JSON.stringify(t)});
+    for(const d of DB.deds.filter(x=>x.period_month===m&&x.period_year===y))await fetch(`${sbUrl}/rest/v1/deductions`,{method:'POST',headers:h,body:JSON.stringify(d)});
+  }catch(e){console.error('Supabase:',e);}
+}
+
+/* ─── EXPORT ─── */
+function toCSV(rows){return rows.map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');}
+function dl(csv,name){const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download=name;a.click();}
+
+function exportCSV(){
+  const m=getM('run-month'),y=getY('run-year');
+  const rows=[['Employee','Type','Work Permit','IBAN','Days Worked','Total Days','Basic','Trip Comm','Other Comm','Deductions','Ded Notes','Net Payable']];
+  DB.employees.forEach(e=>{const L=runOverrides[e.id]||{};rows.push([e.name,e.sheet,e.work_permit,e.iban,L.worked_days||0,L.total_days||30,calcBasic(L).toFixed(2),L.trip_commission||0,L.other_commission||0,L.advances||0,L.deduction_notes||'',calcNet(L).toFixed(2)]);});
+  dl(toCSV(rows),`payroll_${MONTHS[m-1]}_${y}.csv`);
+}
+
+function exportRunCSV(runId){
+  const run=DB.runs.find(r=>r.id===runId);if(!run)return;
+  const lines=DB.lines.filter(l=>l.run_id===runId);
+  const rows=[['Employee','Days','Basic','Trip Comm','Other','Deductions','Notes','Net']];
+  lines.forEach(L=>rows.push([L.employee_name,L.worked_days,L.total_fixed,L.trip_commission||0,L.other_commission||0,L.advances||0,L.deduction_notes||'',L.net_payable]));
+  dl(toCSV(rows),`payroll_${MONTHS[run.period_month-1]}_${run.period_year}.csv`);
+}
+
+function exportAllCSV(){
+  const rows=[['Period','Employee','Type','Work Permit','IBAN','Days','Basic','Trip Comm','Other','Deductions','Notes','Net']];
+  DB.runs.slice().sort((a,b)=>b.period_year-a.period_year||b.period_month-a.period_month).forEach(run=>{
+    const period=`${MONTHS[run.period_month-1]} ${run.period_year}`;
+    DB.lines.filter(l=>l.run_id===run.id).forEach(L=>{
+      const e=DB.employees.find(x=>x.id===L.employee_id)||{};
+      rows.push([period,L.employee_name,e.sheet||'',e.work_permit||'',e.iban||'',L.worked_days,L.total_fixed,L.trip_commission||0,L.other_commission||0,L.advances||0,L.deduction_notes||'',L.net_payable]);
+    });
+  });
+  dl(toCSV(rows),`payroll_all_${new Date().toISOString().slice(0,10)}.csv`);
+}
+
+function closeM(id){document.getElementById(id).classList.remove('open');}
+
+// Init
+sbUrl=localStorage.getItem('sb_url')||'';sbKey=localStorage.getItem('sb_key')||'';
+if(sbUrl&&sbKey){document.getElementById('conn-dot').className='dot ok';document.getElementById('conn-lbl').textContent='Supabase configured';}
+// Pre-initialise all month/year selects so pages show data immediately
+['trip-month','trip-year','ded-month','ded-year','run-month','run-year','imp-month','imp-year'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(!el||el.children.length) return;
+  if(id.includes('month')) MONTHS.forEach((m,i)=>{const o=document.createElement('option');o.value=i+1;o.textContent=m;if(i+1===now.getMonth()+1)o.selected=true;el.appendChild(o);});
+  else for(let y=now.getFullYear();y>=2024;y--){const o=document.createElement('option');o.value=y;o.textContent=y;if(y===now.getFullYear())o.selected=true;el.appendChild(o);}
+});
+// Wire onchange handlers for trip and deduction pages
+document.getElementById('trip-month').onchange=document.getElementById('trip-year').onchange=renderTrips;
+document.getElementById('ded-month').onchange=document.getElementById('ded-year').onchange=renderDeds;
+document.getElementById('run-month').onchange=document.getElementById('run-year').onchange=buildRunTable;
+renderDash();
+
+/* ─── PASTE FROM EXCEL ─── */
+let parsedPasteRows=[];
+function openPasteModal(){document.getElementById('paste-area').value='';document.getElementById('paste-preview').innerHTML='';document.getElementById('paste-confirm-btn').style.display='none';document.getElementById('modal-paste').classList.add('open');}
+function parsePaste(){
+  const raw=document.getElementById('paste-area').value.trim();
+  if(!raw){document.getElementById('paste-preview').innerHTML='';return;}
+  const lines=raw.split('\n').map(l=>l.trim()).filter(l=>l);
+  parsedPasteRows=[];
+  lines.forEach((line,li)=>{
+    const cols=line.split('\t');
+    let offset=0;
+    if(cols.length>=10&&!isNaN(parseFloat(cols[0])))offset=1;
+    const rawDate=(cols[offset+0]||'').trim();
+    const rawName=(cols[offset+1]||'').trim();
+    const rawCust=(cols[offset+2]||'').trim();
+    const rawRoute=(cols[offset+3]||'').trim();
+    const rawTruck=(cols[offset+4]||'').trim();
+    const rawBorder=parseFloat(cols[offset+6])||0;
+    const rawDiesel=parseFloat(cols[offset+7])||0;
+    const rawOther=parseFloat(cols[offset+8])||0;
+    if(!rawName&&!rawRoute)return;
+    let emp=DB.employees.find(e=>e.name.toLowerCase()===rawName.toLowerCase());
+    if(!emp)emp=DB.employees.find(e=>e.name.toLowerCase().includes(rawName.toLowerCase())||rawName.toLowerCase().includes(e.name.toLowerCase().split(' ')[0]));
+    let rateObj=DB.rates.find(r=>r.route.toLowerCase()===rawRoute.toLowerCase());
+    if(!rateObj)rateObj=DB.rates.find(r=>r.route.toLowerCase().includes(rawRoute.toLowerCase()));
+    const tripComm=rateObj?rateObj.rate:(parseFloat(cols[offset+5])||0);
+    let parsedDate='';
+    if(rawDate){
+      if(/^\d{5}$/.test(rawDate)){const d=new Date((parseFloat(rawDate)-25569)*86400*1000);parsedDate=d.toISOString().slice(0,10);}
+      else if(/\d{4}-\d{2}-\d{2}/.test(rawDate)){parsedDate=rawDate.slice(0,10);}
+      else{const m=rawDate.match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/);if(m){const yr=m[3].length===2?'20'+m[3]:m[3];parsedDate=yr+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');}}
+    }
+    parsedPasteRows.push({_line:li+1,_empMatch:!!emp,_routeMatch:!!rateObj,_empName:rawName,_routeName:rawRoute,
+      trip_date:parsedDate,employee_id:emp?.id||'',employee_name:emp?.name||rawName,
+      customer:rateObj?.customer||rawCust,route:rateObj?.route||rawRoute,truck:rawTruck,
+      trip_comm:tripComm,border_exp:rawBorder,diesel_exp:rawDiesel,other_exp:rawOther,
+      total:tripComm+rawBorder+rawDiesel+rawOther,from_loc:'',to_loc:'',notes:''});
+  });
+  renderPastePreview();
+}
+function renderPastePreview(){
+  const valid=parsedPasteRows.filter(r=>r._empMatch&&r._routeMatch).length;
+  const warn=parsedPasteRows.filter(r=>!r._empMatch||!r._routeMatch).length;
+  const total=parsedPasteRows.length;
+  if(!total){document.getElementById('paste-preview').innerHTML='<div class="empty">No rows detected.</div>';document.getElementById('paste-confirm-btn').style.display='none';return;}
+  let h='<div style="display:flex;gap:12px;margin-bottom:.75rem;font-size:12px"><span style="color:var(--green-text);font-weight:500">'+valid+' rows ready</span>'+(warn?'<span style="color:var(--amber-text);font-weight:500">'+warn+' need attention</span>':'')+'<span style="color:var(--text-2)">'+total+' total</span></div>';
+  h+='<div class="tw"><table><thead><tr><th>#</th><th>Date</th><th>Driver</th><th>Route</th><th>Truck</th><th>Trip comm</th><th>Border</th><th>Diesel</th><th>Other</th><th>Total</th></tr></thead><tbody>'
+  +parsedPasteRows.map(r=>'<tr style="'+((!r._empMatch||!r._routeMatch)?'background:var(--amber-bg)':'')+'"><td style="color:var(--text-2)">'+r._line+'</td><td>'+(r.trip_date||'\u2014')+'</td>'
+  +'<td>'+(r._empMatch?'<span style="font-size:11px;font-weight:500">'+r.employee_name+'</span>':'<span style="color:var(--red-text);font-size:11px">Not found: '+r._empName+'</span>')+'</td>'
+  +'<td>'+(r._routeMatch?'<span class="tag" style="background:var(--blue-bg);color:var(--blue-text)">'+r.route+'</span>':'<span style="color:var(--red-text);font-size:11px">Not found: '+r._routeName+'</span>')+'</td>'
+  +'<td class="mono">'+(r.truck||'\u2014')+'</td><td style="font-weight:500">'+r.trip_comm+'</td><td style="color:var(--text-2)">'+(r.border_exp||'\u2014')+'</td><td style="color:var(--text-2)">'+(r.diesel_exp||'\u2014')+'</td><td style="color:var(--text-2)">'+(r.other_exp||'\u2014')+'</td><td style="font-weight:600">'+r.total.toFixed(2)+'</td></tr>').join('')
+  +'</tbody></table></div>';
+  if(warn)h+='<div class="notice warn" style="margin-top:.75rem"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>Amber rows could not match driver or route \u2014 will be skipped on import.</span></div>';
+  document.getElementById('paste-preview').innerHTML=h;
+  document.getElementById('paste-confirm-btn').style.display=valid>0?'inline-flex':'none';
+  document.getElementById('paste-confirm-btn').textContent='Import '+valid+' trip'+(valid!==1?'s':'');
+}
+function confirmPaste(){
+  const m=getM('trip-month'),y=getY('trip-year');
+  parsedPasteRows.filter(r=>r._empMatch&&r._routeMatch).forEach(r=>{
+    DB.trips.push({id:uid(),period_month:m,period_year:y,employee_id:r.employee_id,employee_name:r.employee_name,
+      trip_date:r.trip_date,truck:r.truck,route:r.route,customer:r.customer,trip_comm:r.trip_comm,
+      border_exp:r.border_exp,diesel_exp:r.diesel_exp,other_exp:r.other_exp,total:r.total,from_loc:'',to_loc:'',notes:''});
+  });
+  const cnt=parsedPasteRows.filter(r=>r._empMatch&&r._routeMatch).length;
+  save();closeM('modal-paste');renderTrips();
+  alert(cnt+' trip'+(cnt!==1?'s':'')+' imported for '+MONTHS[m-1]+' '+y+'.');
+}
+
+/* ─── IMPORT EXCEL ─── */
+let importData={employees:[],rates:[],trips:[],deductions:[]};
+function renderImport(){monthSels('imp-month','imp-year');}
+function handleDrop(e){e.preventDefault();document.getElementById('drop-zone').style.borderColor='var(--border-strong)';const file=e.dataTransfer.files[0];if(file)readExcel(file);}
+function readExcel(file){
+  if(!file)return;
+  document.getElementById('xl-filename').textContent='Reading: '+file.name+'\u2026';
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});parseWorkbook(wb,file.name);}
+    catch(err){alert('Could not read file: '+err.message);}
+  };
+  reader.readAsArrayBuffer(file);
+}
+function parseWorkbook(wb,filename){
+  importData={employees:[],rates:[],trips:[],deductions:[]};
+  document.getElementById('xl-filename').textContent='File: '+filename;
+  // Employees
+  ['Driver ','Staff '].forEach(sname=>{
+    const ws=wb.Sheets[sname]||wb.Sheets[sname.trim()];if(!ws)return;
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
+    const sheet=sname.trim();
+    const nameRow=rows[5]||[];const desigRow=rows[7]||[];const basicRow=rows[15]||[];
+    nameRow.forEach((v,ci)=>{
+      if(ci<=2||!v||typeof v!=='string'||v.trim().length<3)return;
+      const designation=desigRow[ci]||(sheet==='Staff'?'Sales Associate':'Driver');
+      const basic=typeof basicRow[ci]==='number'?basicRow[ci]:0;
+      let wp='',lc='',iban='';
+      for(let ri=5;ri<Math.min(25,rows.length);ri++){
+        const rowLabel=(rows[ri][2]||'').toString().toLowerCase();const val=rows[ri][ci];if(!val)continue;
+        if(rowLabel.includes('work permit')||rowLabel.includes('permit no'))wp=String(val);
+        else if(rowLabel.includes('labor card')||rowLabel.includes('labour card')||rowLabel.includes('card no'))lc=String(val);
+        else if(rowLabel.includes('iban')||rowLabel.includes('account'))iban=String(val);
+      }
+      importData.employees.push({id:uid(),name:v.trim(),sheet,designation:typeof designation==='string'?designation:sheet==='Staff'?'Sales Associate':'Driver',work_permit:wp,labor_card:lc,iban,basic_salary:basic,email:''});
+    });
+  });
+  // Rates
+  const commWs=wb.Sheets['Comm'];
+  if(commWs){
+    const rows=XLSX.utils.sheet_to_json(commWs,{header:1,defval:null});
+    const seen=new Set();
+    rows.forEach(row=>{
+      const numIdx=row.findIndex(v=>typeof v==='number'&&v>0);
+      if(numIdx<0)return;
+      const strVals=row.filter(v=>typeof v==='string'&&v.trim().length>0);
+      if(strVals.length<1)return;
+      const key=(strVals[1]||strVals[0]||'')+row[numIdx];
+      if(seen.has(key))return;seen.add(key);
+      importData.rates.push({id:uid(),customer:strVals[0]||'',route:strVals[1]||strVals[0]||'',rate:row[numIdx]});
+    });
+  }
+  // Trips from Trip Log sheet
+  const tripWs=wb.Sheets['Trip Log'];
+  if(tripWs){
+    const rows=XLSX.utils.sheet_to_json(tripWs,{header:1,defval:null,cellDates:true});
+    for(let ri=5;ri<rows.length;ri++){
+      const row=rows[ri];if(!row||!row[1])continue;
+      const dateVal=row[1];let tripDate='';
+      if(dateVal instanceof Date)tripDate=dateVal.toISOString().slice(0,10);
+      else if(typeof dateVal==='string'&&dateVal.includes('-'))tripDate=dateVal.slice(0,10);
+      else if(typeof dateVal==='number'){const d=new Date((dateVal-25569)*86400*1000);tripDate=d.toISOString().slice(0,10);}
+      const driverName=(row[2]||'').toString().trim();const route=(row[4]||'').toString().trim();
+      if(!driverName&&!route)continue;
+      const emp=DB.employees.find(e=>e.name===driverName)||importData.employees.find(e=>e.name===driverName);
+      importData.trips.push({id:uid(),employee_id:emp?.id||'',employee_name:driverName,trip_date:tripDate,
+        customer:(row[3]||'').toString().trim(),route,truck:(row[5]||'').toString().trim(),
+        trip_comm:typeof row[6]==='number'?row[6]:0,border_exp:typeof row[7]==='number'?row[7]:0,
+        diesel_exp:typeof row[8]==='number'?row[8]:0,other_exp:typeof row[9]==='number'?row[9]:0,
+        total:typeof row[10]==='number'?row[10]:0,from_loc:'',to_loc:'',notes:''});
+    }
+  }
+  // Deductions from Driver/Staff Section C
+  ['Driver ','Staff '].forEach(sname=>{
+    const ws=wb.Sheets[sname]||wb.Sheets[sname.trim()];if(!ws)return;
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
+    const nameRow=rows[5]||[];
+    nameRow.forEach((v,nameCI)=>{
+      if(nameCI<=2||!v||typeof v!=='string'||v.trim().length<3)return;
+      const empName=v.trim();const bs=nameCI-9;
+      for(let ri=56;ri<=69&&ri<rows.length;ri++){
+        const row=rows[ri];if(!row)continue;
+        const desc=(row[bs+4]||row[bs+3]||'').toString().trim();
+        const amt=typeof row[nameCI]==='number'?row[nameCI]:0;
+        if(amt<=0)continue;
+        const dl=desc.toLowerCase();
+        let cat='other';
+        if(dl.includes('fine')||dl.includes('traffic')||dl.includes('salik')||dl.includes('pts'))cat='fine';
+        else if(dl.includes('advance')||dl.includes('loan'))cat='advance';
+        else if(dl.includes('leave')||dl.includes('lwp')||dl.includes('unpaid'))cat='lwp';
+        const emp=DB.employees.find(e=>e.name===empName)||importData.employees.find(e=>e.name===empName);
+        importData.deductions.push({id:uid(),employee_id:emp?.id||'',employee_name:empName,ded_date:'',
+          category:cat,description:desc||'Imported deduction',reference:'',amount:amt,traffic_points:0});
+      }
+    });
+  });
+  renderImportPreview();
+}
+function renderImportPreview(){
+  const d=importData;
+  document.getElementById('import-preview').style.display='block';
+  document.getElementById('import-summary').innerHTML=`
+    <div class="metric"><div class="metric-l">Employees</div><div class="metric-v">${d.employees.length}</div><div class="metric-s">from Driver & Staff</div></div>
+    <div class="metric"><div class="metric-l">Commission rates</div><div class="metric-v">${d.rates.length}</div><div class="metric-s">from Comm sheet</div></div>
+    <div class="metric"><div class="metric-l">Trips</div><div class="metric-v">${d.trips.length}</div><div class="metric-s">from Trip Log</div></div>
+    <div class="metric"><div class="metric-l">Deductions</div><div class="metric-v">${d.deductions.length}</div><div class="metric-s">from Section C</div></div>`;
+  if(d.employees.length){
+    document.getElementById('imp-emp-card').style.display='block';
+    document.getElementById('imp-emp-tb').innerHTML=d.employees.map(e=>'<tr><td style="font-weight:500;font-size:12px">'+e.name+'</td><td><span class="badge '+(e.sheet==='Driver'?'b-dr':'b-st')+'">'+e.sheet+'</span></td><td>'+e.designation+'</td><td class="mono">'+(e.work_permit||'\u2014')+'</td><td class="mono">'+(e.labor_card||'\u2014')+'</td><td class="mono" style="max-width:120px;overflow:hidden;text-overflow:ellipsis" title="'+e.iban+'">'+(e.iban||'\u2014')+'</td><td>'+(e.basic_salary>0?aed(e.basic_salary):'\u2014')+'</td></tr>').join('');
+  }
+  if(d.rates.length){
+    document.getElementById('imp-rates-card').style.display='block';
+    document.getElementById('imp-rates-tb').innerHTML=d.rates.map(r=>'<tr><td>'+(r.customer||'\u2014')+'</td><td style="font-weight:500">'+r.route+'</td><td>'+aed(r.rate)+'</td></tr>').join('');
+  }
+  if(d.trips.length){
+    document.getElementById('imp-trips-card').style.display='block';
+    document.getElementById('imp-trips-tb').innerHTML=d.trips.map(t=>'<tr><td>'+(t.trip_date||'\u2014')+'</td><td style="font-size:12px">'+t.employee_name+'</td><td><span class="tag" style="background:var(--blue-bg);color:var(--blue-text)">'+(t.route||'\u2014')+'</span></td><td class="mono">'+(t.truck||'\u2014')+'</td><td style="font-weight:500">'+num(t.trip_comm)+'</td><td style="color:var(--text-2)">'+(t.border_exp>0?num(t.border_exp):'\u2014')+'</td><td style="color:var(--text-2)">'+(t.diesel_exp>0?num(t.diesel_exp):'\u2014')+'</td><td style="color:var(--text-2)">'+(t.other_exp>0?num(t.other_exp):'\u2014')+'</td><td style="font-weight:600">'+aed(t.total)+'</td></tr>').join('');
+  }
+  if(d.deductions.length){
+    document.getElementById('imp-deds-card').style.display='block';
+    document.getElementById('imp-deds-tb').innerHTML=d.deductions.map(d=>'<tr><td style="font-size:12px;font-weight:500">'+d.employee_name+'</td><td>'+d.description+'</td><td style="color:var(--red-text);font-weight:500">('+aed(d.amount)+')</td></tr>').join('');
+  }
+  document.getElementById('imp-options').style.display='block';
+  monthSels('imp-month','imp-year');
+}
+function confirmImport(){
+  const m=getM('imp-month'),y=getY('imp-year');const msg=[];
+  if(document.getElementById('opt-emp').checked&&importData.employees.length){DB.employees=importData.employees;msg.push(importData.employees.length+' employees');}
+  if(document.getElementById('opt-rates').checked&&importData.rates.length){DB.rates=importData.rates;msg.push(importData.rates.length+' rates');}
+  if(document.getElementById('opt-trips').checked&&importData.trips.length){
+    DB.trips=DB.trips.filter(t=>!(t.period_month===m&&t.period_year===y));
+    DB.trips.push(...importData.trips.map(t=>({...t,period_month:m,period_year:y})));
+    msg.push(importData.trips.length+' trips for '+MONTHS[m-1]+' '+y);
+  }
+  if(document.getElementById('opt-deds').checked&&importData.deductions.length){
+    DB.deds=DB.deds.filter(d=>!(d.period_month===m&&d.period_year===y));
+    DB.deds.push(...importData.deductions.map(d=>({...d,period_month:m,period_year:y})));
+    msg.push(importData.deductions.length+' deductions');
+  }
+  save();alert('Imported: '+msg.join(', ')+'.\n\nCheck Employees, Trip Log, or Deductions to review.');
+}
+
+
+
+/* ─── DEDUCTION ATTACHMENTS ─── */
+let _dedAttach = null; // {name, size, type, data (base64)}
+
+function handleDedDrop(e){
+  e.preventDefault();
+  document.getElementById('ded-attach-zone').style.borderColor='var(--border-strong)';
+  const file=e.dataTransfer.files[0];
+  if(file) processDedFile(file);
+}
+
+function handleDedFile(file){
+  if(file) processDedFile(file);
+}
+
+function processDedFile(file){
+  if(file.size > 4*1024*1024){
+    alert('File is too large. Maximum size is 4 MB.');
+    return;
+  }
+  const reader=new FileReader();
+  reader.onload=function(e){
+    _dedAttach={
+      name:file.name,
+      size:file.size,
+      type:file.type,
+      data:e.target.result, // full data URL (base64)
+    };
+    showDedAttachPreview(file.name, file.size);
+  };
+  reader.readAsDataURL(file);
+}
+
+function showDedAttachPreview(name, size){
+  const preview=document.getElementById('ded-attach-preview');
+  preview.style.display='flex';
+  document.getElementById('ded-attach-name').textContent=name;
+  document.getElementById('ded-attach-size').textContent=formatFileSize(size);
+  // Update drop zone
+  const zone=document.getElementById('ded-attach-zone');
+  zone.style.borderColor='var(--green-bd)';
+  zone.style.background='var(--green-bg)';
+  zone.querySelector('div').textContent='✓ File attached';
+}
+
+function clearDedAttach(){
+  _dedAttach=null;
+  document.getElementById('ded-attach-preview').style.display='none';
+  document.getElementById('ded-file').value='';
+  const zone=document.getElementById('ded-attach-zone');
+  zone.style.borderColor='var(--border-strong)';
+  zone.style.background='';
+  zone.querySelectorAll('div')[0].textContent='Click or drag to attach a file';
+}
+
+function formatFileSize(bytes){
+  if(bytes<1024)return bytes+' B';
+  if(bytes<1024*1024)return (bytes/1024).toFixed(1)+' KB';
+  return (bytes/(1024*1024)).toFixed(1)+' MB';
+}
+
+function viewDedAttach(dedId){
+  const d=DB.deds.find(x=>x.id===dedId);
+  if(!d||!d.attachment)return;
+  const att=d.attachment;
+  // Open in new tab
+  const win=window.open();
+  if(att.type&&att.type.startsWith('image/')){
+    win.document.write('<html><body style="margin:0;background:#111;display:flex;align-items:center;justify-content:center;min-height:100vh"><img src="'+att.data+'" style="max-width:100%;max-height:100vh;object-fit:contain"></body></html>');
+  } else if(att.type==='application/pdf'||att.name.endsWith('.pdf')){
+    win.document.write('<html><body style="margin:0"><embed src="'+att.data+'" type="application/pdf" width="100%" height="100%"></body></html>');
+  } else {
+    // Trigger download
+    win.close();
+    const a=document.createElement('a');
+    a.href=att.data;
+    a.download=att.name;
+    a.click();
+  }
+}
+
+function downloadDedAttach(dedId){
+  const d=DB.deds.find(x=>x.id===dedId);
+  if(!d||!d.attachment)return;
+  const a=document.createElement('a');
+  a.href=d.attachment.data;
+  a.download=d.attachment.name;
+  a.click();
+}
+
+/* ─── EMAIL SENDING ─── */
+async function sendSlipsForRun(run, lines, period){
+  const withEmail=lines.filter(L=>{const e=DB.employees.find(x=>x.id===L.employee_id);return e&&e.email&&e.email.includes('@');});
+  let sent=0,failed=0;
+  const toast=document.createElement('div');
+  toast.style.cssText='position:fixed;bottom:20px;right:20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:1rem 1.25rem;min-width:280px;box-shadow:0 4px 20px rgba(0,0,0,.12);z-index:999;font-size:13px';
+  toast.innerHTML='<div style="font-weight:600;margin-bottom:8px">Sending salary slips…</div><div id="email-log" style="font-size:12px;color:var(--text-2)"></div>';
+  document.body.appendChild(toast);
+  for(const L of withEmail){
+    const e=DB.employees.find(x=>x.id===L.employee_id)||{name:L.employee_name};
+    const logEl=document.getElementById('email-log');
+    if(logEl)logEl.textContent='Sending to '+e.name+'…';
+    try{
+      const body=buildEmailHtml(e,{...L,period_month:run.period_month,period_year:run.period_year},period);
+      const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,
+          system:'Use Gmail to send this salary slip email. After sending respond ONLY with JSON: {"ok":true} or {"ok":false,"error":"reason"}. No other text.',
+          messages:[{role:'user',content:'Send via Gmail:\nTo: '+e.email+'\nSubject: Salary Slip — '+e.name+' — '+period+'\nBody (HTML):\n'+body}],
+          mcp_servers:[{type:'url',url:'https://gmailmcp.googleapis.com/mcp/v1',name:'gmail-mcp'}]})});
+      const data=await res.json();
+      const tb=(data.content||[]).find(b=>b.type==='text');
+      let result={ok:false,error:'No response'};
+      if(tb){try{result=JSON.parse(tb.text.replace(/```json|```/g,'').trim());}catch{result={ok:true};}}
+      else if((data.content||[]).some(b=>b.type==='mcp_tool_use'||b.type==='tool_use'))result={ok:true};
+      if(result.ok)sent++;else{failed++;console.warn('Failed:',e.name,result.error);}
+    }catch(err){failed++;console.error(err);}
+  }
+  document.body.removeChild(toast);
+  alert('Salary slips sent.\n✓ '+sent+' delivered'+(failed>0?'\n✗ '+failed+' failed — check console':''));
+}
+
+async function sendRunSlips(runId){
+  const run=DB.runs.find(r=>r.id===runId);if(!run)return;
+  const lines=DB.lines.filter(l=>l.run_id===runId);
+  const period=MONTHS[run.period_month-1]+' '+run.period_year;
+  const withEmail=lines.filter(L=>{const e=DB.employees.find(x=>x.id===L.employee_id);return e&&e.email&&e.email.includes('@');});
+  if(!withEmail.length){alert('No employees in this run have email addresses on file.');return;}
+  if(!confirm('Send salary slips for '+period+' to '+withEmail.length+' employee'+(withEmail.length>1?'s':'')+'?'))return;
+  await sendSlipsForRun(run,lines,period);
+}
+
+function buildEmailHtml(e,L,period){
+  const co=DB.company;const wps=co.wps||5,vat=co.vat||0.25;
+  const basic=typeof L.total_fixed==='number'?L.total_fixed:calcBasic(L);
+  const trip=parseFloat(L.trip_commission)||0;
+  const other=parseFloat(L.other_commission)||0;
+  const adv=parseFloat(L.advances)||0;
+  const net=parseFloat(L.net_payable)||calcNet(L);
+  const grand=net>0?net+wps+vat:0;
+  const m=L.period_month,y=L.period_year;
+  const tripLines=m&&y?DB.trips.filter(t=>t.period_month===m&&t.period_year===y&&t.employee_id===e.id):[];
+  const dedLines=m&&y?DB.deds.filter(d=>d.period_month===m&&d.period_year===y&&d.employee_id===e.id):[];
+  const ledgerLines=m&&y?DB.recoveries.filter(r=>r.period_month===m&&r.period_year===y&&r.employee_id===e.id).map(r=>{
+    const l=DB.ledger.find(x=>x.id===r.ledger_id);
+    return l?{desc:(LEDGER_TYPES[l.type]||l.type)+': '+l.description,amount:r.amount}:null;
+  }).filter(Boolean):[];
+
+  const absence=(L.total_days||30)-(L.worked_days||0);
+  return '<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;border:1px solid #ddd;border-radius:8px;overflow:hidden">'
+  +'<div style="background:#1A1A2E;color:#fff;padding:14px 20px"><div style="font-size:15px;font-weight:700">'+co.name.toUpperCase()+'</div><div style="font-size:10px;opacity:.6;margin-top:2px">'+co.addr+'</div></div>'
+  +'<div style="background:#f5f5f5;padding:9px 20px;border-bottom:1px solid #ddd;display:flex;justify-content:space-between"><span style="font-size:12px;font-weight:700">SALARY SLIP</span><span style="font-size:12px;color:#555">'+period+'</span></div>'
+  +'<div style="padding:16px 20px">'
+  +'<table style="width:100%;font-size:12px;border-collapse:collapse;margin-bottom:14px">'
+  +'<tr><td style="color:#666;padding:3px 0">Employee</td><td style="font-weight:700;text-align:right">'+(e.name||L.employee_name)+'</td></tr>'
+  +'<tr><td style="color:#666;padding:3px 0">Designation</td><td style="text-align:right">'+(e.designation||'—')+'</td></tr>'
+  +'<tr><td style="color:#666;padding:3px 0">Work Permit</td><td style="text-align:right;font-family:monospace">'+(e.work_permit||'—')+'</td></tr>'
+  +'<tr><td style="color:#666;padding:3px 0">Labor Card</td><td style="text-align:right;font-family:monospace">'+(e.labor_card||'—')+'</td></tr>'
+  +'<tr><td style="color:#666;padding:3px 0">IBAN</td><td style="text-align:right;font-family:monospace;font-size:10px">'+(e.iban||'—')+'</td></tr>'
+  +'<tr><td style="color:#666;padding:3px 0">Days Worked</td><td style="text-align:right">'+(L.worked_days||0)+' / '+(L.total_days||30)+(absence>0?' ('+absence+' days absence)':'')+'</td></tr>'
+  +'</table>'
+  +'<table style="width:100%;font-size:12px;border-collapse:collapse;border-top:1px solid #eee">'
+  +'<tr style="background:#f9f9f9"><td colspan="2" style="padding:5px 6px;font-weight:700;font-size:10px;text-transform:uppercase">Section A — Fixed Salary</td></tr>'
+  +'<tr><td style="padding:4px 6px;color:#555">Basic Salary</td><td style="text-align:right;padding:4px 6px">AED '+num(basic)+'</td></tr>'
+  +'<tr style="font-weight:700;border-top:1px solid #eee"><td style="padding:5px 6px">Total Fixed</td><td style="text-align:right;padding:5px 6px">AED '+num(basic)+'</td></tr>'
+  +'<tr style="background:#f9f9f9"><td colspan="2" style="padding:5px 6px;font-weight:700;font-size:10px;text-transform:uppercase">Section B — Variable Earnings</td></tr>'
+  +'<tr><td style="padding:4px 6px;color:#555">Trip Commissions</td><td style="text-align:right;padding:4px 6px">AED '+num(trip)+'</td></tr>'
+  +(other?'<tr><td style="padding:4px 6px;color:#555">Other Commissions</td><td style="text-align:right;padding:4px 6px">AED '+num(other)+'</td></tr>':'')
+  +'<tr style="font-weight:700;border-top:1px solid #eee"><td style="padding:5px 6px">Total Variable</td><td style="text-align:right;padding:5px 6px">AED '+num(trip+other)+'</td></tr>'
+  +(adv>0?'<tr style="background:#f9f9f9"><td colspan="2" style="padding:5px 6px;font-weight:700;font-size:10px;text-transform:uppercase">Section C — Deductions</td></tr>'
+    +dedLines.map(d=>'<tr><td style="padding:4px 6px;color:#c00">'+d.category+': '+d.description+'</td><td style="text-align:right;padding:4px 6px;color:#c00">(AED '+num(d.amount)+')</td></tr>').join('')
+    +ledgerLines.map(r=>'<tr><td style="padding:4px 6px;color:#c00">'+r.desc+'</td><td style="text-align:right;padding:4px 6px;color:#c00">(AED '+num(r.amount)+')</td></tr>').join('')
+    +((!dedLines.length&&!ledgerLines.length&&adv>0)?'<tr><td style="padding:4px 6px;color:#c00">'+(L.deduction_notes||'Deductions')+'</td><td style="text-align:right;padding:4px 6px;color:#c00">(AED '+num(adv)+')</td></tr>':'')
+    +'<tr style="font-weight:700;border-top:1px solid #eee;color:#c00"><td style="padding:5px 6px">Total Deductions</td><td style="text-align:right;padding:5px 6px">(AED '+num(adv)+')</td></tr>'
+    :'')
+  +'<tr><td style="padding:4px 6px;color:#555">WPS Commission</td><td style="text-align:right;padding:4px 6px">AED '+num(wps)+'</td></tr>'
+  +'<tr><td style="padding:4px 6px;color:#555">VAT</td><td style="text-align:right;padding:4px 6px">AED '+num(vat)+'</td></tr>'
+  +'<tr style="background:#1A1A2E;color:#fff;font-size:14px"><td style="padding:10px 6px;font-weight:700">NET PAYABLE</td><td style="text-align:right;padding:10px 6px;font-weight:700">AED '+(net>0?num(grand):'0.00')+'</td></tr>'
+  +'</table>'
+  +((tripLines.length||trip||adv||ledgerLines.length)?
+    '<div style="margin-top:14px;background:#f9f9f9;border:1px solid #eee;border-radius:6px;padding:12px 14px">'
+    +'<div style="font-size:10px;font-weight:700;letter-spacing:.3px;color:#444;margin-bottom:8px;text-transform:uppercase">Additional Memo</div>'
+    +(tripLines.length?'<div style="font-size:10px;font-weight:600;color:#555;margin-bottom:4px">Trips</div><table style="width:100%;font-size:11px;border-collapse:collapse;margin-bottom:8px">'+tripLines.map(t=>'<tr><td style="padding:2px 0;color:#444">'+(t.trip_date||'')+' · '+t.route+(t.truck?' · '+t.truck:'')+(t.from_loc?' · '+t.from_loc+' → '+t.to_loc:'')+'</td><td style="text-align:right;font-family:monospace">AED '+num(t.trip_comm)+'</td></tr>').join('')+'</table>':(trip?'<div style="font-size:11px;display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#444">Trip commissions</span><span>AED '+num(trip)+'</span></div>':''))
+    +(dedLines.length||ledgerLines.length?'<div style="font-size:10px;font-weight:600;color:#555;margin:6px 0 4px">Deductions</div><table style="width:100%;font-size:11px;border-collapse:collapse">'+dedLines.map(d=>'<tr><td style="padding:2px 0;color:#c00">'+d.category+(d.ded_date?' · '+d.ded_date:'')+(d.description?' · '+d.description:'')+(d.reference?' ['+d.reference+']':'')+(d.traffic_points>0?' ('+d.traffic_points+' pts)':'')+'</td><td style="text-align:right;font-family:monospace;color:#c00">(AED '+num(d.amount)+')</td></tr>').join('')+ledgerLines.map(r=>'<tr><td style="padding:2px 0;color:#c00">'+r.desc+'</td><td style="text-align:right;font-family:monospace;color:#c00">(AED '+num(r.amount)+')</td></tr>').join('')+'</table>':'')
+    +'<p style="font-size:10px;color:#888;margin-top:8px;line-height:1.5">Variable incentives are performance-based and discretionary. Fixed salary paid through WPS per MOHRE employment contract. Advances and deductions offset against variable earnings only.</p>'
+    +'</div>':'')
+  +'</div>'
+  +'<div style="background:#f5f5f5;padding:9px 20px;font-size:10px;color:#999;border-top:1px solid #ddd">System-generated salary slip. Please do not reply to this email.</div>'
+  +'</div>';
+}
+
+/* ─── EMPLOYEE LEDGER ─── */
+const LEDGER_TYPES={'advance':'Salary advance / loan','fine':'Traffic fine','expense':'Company expense','overpayment':'Overpayment recovery'};
+const LEDGER_COLORS={'advance':{bg:'var(--amber-bg)',text:'var(--amber-text)'},'fine':{bg:'var(--red-bg)',text:'var(--red-text)'},'expense':{bg:'var(--blue-bg)',text:'var(--blue-text)'},'overpayment':{bg:'#F3EDFF',text:'#5B21B6'}};
+
+function renderLedger(){
+  const total=DB.ledger.reduce((s,l)=>s+l.original_amount,0);
+  const outstanding=DB.ledger.filter(l=>l.status!=='cleared').reduce((s,l)=>s+(l.balance||0),0);
+  const cleared=DB.ledger.filter(l=>l.status==='cleared').length;
+  const active=DB.ledger.filter(l=>l.status!=='cleared').length;
+  document.getElementById('ledger-summary').innerHTML=`
+    <div class="metric"><div class="metric-l">Total recorded</div><div class="metric-v" style="font-size:17px">${aed(total)}</div><div class="metric-s">${DB.ledger.length} entries</div></div>
+    <div class="metric"><div class="metric-l">Outstanding</div><div class="metric-v" style="font-size:17px;color:var(--red-text)">${aed(outstanding)}</div><div class="metric-s">${active} active</div></div>
+    <div class="metric"><div class="metric-l">Cleared</div><div class="metric-v">${cleared}</div><div class="metric-s">fully recovered</div></div>
+    <div class="metric"><div class="metric-l">Active payables</div><div class="metric-v">${active}</div><div class="metric-s">auto-deducted each run</div></div>`;
+  if(!DB.ledger.length){
+    document.getElementById('ledger-list').innerHTML='<div class="empty">No payables recorded. Click \u201cAdd payable\u201d to start.</div>';
+    return;
+  }
+  const byEmp={};
+  DB.employees.forEach(e=>{byEmp[e.id]={emp:e,entries:[]};});
+  DB.ledger.forEach(l=>{if(byEmp[l.employee_id])byEmp[l.employee_id].entries.push(l);});
+  document.getElementById('ledger-list').innerHTML=Object.values(byEmp).filter(d=>d.entries.length).map(d=>{
+    const empBal=d.entries.reduce((s,l)=>s+(l.balance||0),0);
+    const empOrig=d.entries.reduce((s,l)=>s+l.original_amount,0);
+    const rec=empOrig-empBal;
+    const pct=empOrig>0?Math.round(rec/empOrig*100):0;
+    const rows=d.entries.map(l=>{
+      const recTotal=DB.recoveries.filter(r=>r.ledger_id===l.id).reduce((s,r)=>s+r.amount,0);
+      const col=LEDGER_COLORS[l.type]||LEDGER_COLORS.advance;
+      const isCleared=l.status==='cleared'||(l.balance||0)<=0;
+      const recs=DB.recoveries.filter(r=>r.ledger_id===l.id).sort((a,b)=>a.period_year-b.period_year||a.period_month-b.period_month);
+      const recRows=recs.map(r=>`
+        <tr>
+          <td style="padding:3px 8px">${MONTHS[r.period_month-1]} ${r.period_year}</td>
+          <td style="padding:3px 8px;color:var(--green-text);font-weight:600">${aed(r.amount)}</td>
+          <td style="padding:3px 8px;color:var(--text-2)">${r.notes||'—'}</td>
+          <td><button class="btn xs dan" onclick="delRecovery('${r.id}','${l.id}')">Del</button></td>
+        </tr>`).join('');
+      return `
+        <tr style="${isCleared?'opacity:.55':''}">
+          <td style="font-size:12px">${l.date||'—'}</td>
+          <td><span class="badge" style="background:${col.bg};color:${col.text}">${LEDGER_TYPES[l.type]||l.type}</span></td>
+          <td style="font-size:12px;max-width:180px">${l.description}</td>
+          <td class="mono">${l.reference||'—'}</td>
+          <td style="text-align:right;font-size:12px">${aed(l.original_amount)}</td>
+          <td style="text-align:right;font-size:12px;color:var(--green-text)">${aed(recTotal)}</td>
+          <td style="text-align:right;font-weight:600;font-size:12px;color:${isCleared?'var(--text-3)':'var(--red-text)'}">${isCleared?'—':aed(l.balance)}</td>
+          <td style="font-size:12px;text-align:right">${l.emi>0?aed(l.emi):'—'}</td>
+          <td>${isCleared
+            ?'<span class="badge" style="background:var(--green-bg);color:var(--green-text)">Cleared</span>'
+            :'<span class="badge" style="background:var(--amber-bg);color:var(--amber-text)">Active</span>'
+          }</td>
+          <td>
+            <div style="display:flex;gap:4px">
+              ${!isCleared?`<button class="btn xs" onclick="openRecoveryModal('${l.id}')">Recover</button>`:''}
+              <button class="btn xs" onclick="toggleRecHist('${l.id}')">History</button>
+              <button class="btn xs" onclick="editLedger('${l.id}')">Edit</button>
+              <button class="btn xs dan" onclick="delLedger('${l.id}')">Del</button>
+            </div>
+          </td>
+        </tr>
+        <tr id="rh-${l.id}" style="display:none;background:var(--bg)">
+          <td colspan="10" style="padding:8px 16px">
+            <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:6px">Recovery history</div>
+            ${recs.length
+              ?`<table style="font-size:11px;width:auto"><thead><tr>
+                  <th style="padding:3px 8px">Period</th>
+                  <th style="padding:3px 8px">Amount</th>
+                  <th style="padding:3px 8px">Notes</th>
+                  <th></th>
+                </tr></thead><tbody>${recRows}</tbody></table>`
+              :'<div style="color:var(--text-3);font-size:11px">No recoveries yet.</div>'
+            }
+          </td>
+        </tr>`;
+    }).join('');
+    return `
+      <div class="tl-driver-block" style="margin-bottom:1rem">
+        <div class="tl-driver-hd">
+          <div>
+            <div class="tl-driver-name">${d.emp.name}</div>
+            <span class="badge ${d.emp.sheet==='Driver'?'b-dr':'b-st'}" style="margin-top:3px">${d.emp.sheet}</span>
+          </div>
+          <div class="tl-summary">
+            <span>Outstanding: <strong style="color:var(--red-text)">${aed(empBal)}</strong></span>
+            <span>Recovered: <strong style="color:var(--green-text)">${aed(rec)}</strong></span>
+            <span style="color:var(--text-3)">${pct}% cleared</span>
+          </div>
+        </div>
+        <div class="tw" style="border:none;border-radius:0">
+          <table>
+            <thead><tr>
+              <th>Date</th><th>Type</th><th>Description</th><th>Ref</th>
+              <th style="text-align:right">Original</th>
+              <th style="text-align:right">Recovered</th>
+              <th style="text-align:right">Balance</th>
+              <th>EMI/mo</th><th>Status</th><th></th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function toggleRecHist(id){const r=document.getElementById('rh-'+id);if(r)r.style.display=r.style.display==='none'?'table-row':'none';}
+
+function updateLedgerEmiPreview(){
+  const total=parseFloat(document.getElementById('lm-amount').value)||0;
+  const emi=parseFloat(document.getElementById('lm-emi').value)||0;
+  const preview=document.getElementById('lm-emi-preview');
+  if(!total||!emi){preview.style.display='none';return;}
+  preview.style.display='block';
+  const months=Math.ceil(total/emi);
+  document.getElementById('lm-ep-total').textContent=aed(total);
+  document.getElementById('lm-ep-emi').textContent=aed(emi)+'/mo';
+  document.getElementById('lm-ep-months').textContent=months+' month'+(months!==1?'s':'');
+}
+
+function openLedgerModal(){
+  document.getElementById('lm-id').value='';document.getElementById('ledger-mt').textContent='Add payable';
+  document.getElementById('lm-emp').innerHTML=DB.employees.map(e=>'<option value="'+e.id+'">'+e.name+'</option>').join('');
+  document.getElementById('lm-date').value=now.toISOString().slice(0,10);
+  document.getElementById('lm-type').value='advance';
+  ['lm-desc','lm-ref','lm-amount','lm-emi'].forEach(id=>document.getElementById(id).value='');
+  ['lm-start-month','lm-start-year'].forEach(id=>{
+    const el=document.getElementById(id);if(el.children.length)return;
+    if(id.includes('month'))MONTHS.forEach((m,i)=>{const o=document.createElement('option');o.value=i+1;o.textContent=m;if(i+1===now.getMonth()+1)o.selected=true;el.appendChild(o);});
+    else for(let y=now.getFullYear();y>=2024;y--){const o=document.createElement('option');o.value=y;o.textContent=y;if(y===now.getFullYear())o.selected=true;el.appendChild(o);}
+  });
+  document.getElementById('modal-ledger').classList.add('open');
+}
+
+function editLedger(id){
+  const l=DB.ledger.find(x=>x.id===id);if(!l)return;openLedgerModal();
+  document.getElementById('lm-id').value=l.id;document.getElementById('ledger-mt').textContent='Edit payable';
+  document.getElementById('lm-emp').value=l.employee_id;document.getElementById('lm-date').value=l.date||'';
+  document.getElementById('lm-type').value=l.type;document.getElementById('lm-desc').value=l.description;
+  document.getElementById('lm-ref').value=l.reference||'';document.getElementById('lm-amount').value=l.original_amount;
+  document.getElementById('lm-emi').value=l.emi||0;
+  document.getElementById('lm-start-month').value=l.start_month||now.getMonth()+1;
+  document.getElementById('lm-start-year').value=l.start_year||now.getFullYear();
+}
+
+function saveLedgerEntry(){
+  const id=document.getElementById('lm-id').value;
+  const empId=document.getElementById('lm-emp').value;const emp=DB.employees.find(e=>e.id===empId);
+  const origAmt=parseFloat(document.getElementById('lm-amount').value)||0;
+  const type=document.getElementById('lm-type').value;
+  if(!origAmt){alert('Please enter an amount.');return;}
+  if(id){
+    const ex=DB.ledger.find(x=>x.id===id);
+    const recTotal=DB.recoveries.filter(r=>r.ledger_id===id).reduce((s,r)=>s+r.amount,0);
+    Object.assign(ex,{employee_id:empId,employee_name:emp?.name||'',date:document.getElementById('lm-date').value,
+      type,type_label:LEDGER_TYPES[type]||type,description:document.getElementById('lm-desc').value,
+      reference:document.getElementById('lm-ref').value,original_amount:origAmt,balance:Math.max(0,origAmt-recTotal),
+      emi:parseFloat(document.getElementById('lm-emi').value)||0,
+      start_month:parseInt(document.getElementById('lm-start-month').value),
+      start_year:parseInt(document.getElementById('lm-start-year').value),
+      status:Math.max(0,origAmt-recTotal)<=0?'cleared':'active'});
+  } else {
+    DB.ledger.push({id:uid(),employee_id:empId,employee_name:emp?.name||'',
+      date:document.getElementById('lm-date').value,type,type_label:LEDGER_TYPES[type]||type,
+      description:document.getElementById('lm-desc').value,reference:document.getElementById('lm-ref').value,
+      original_amount:origAmt,balance:origAmt,emi:parseFloat(document.getElementById('lm-emi').value)||0,
+      start_month:parseInt(document.getElementById('lm-start-month').value),
+      start_year:parseInt(document.getElementById('lm-start-year').value),
+      status:'active',created_at:new Date().toISOString()});
+  }
+  save();closeM('modal-ledger');renderLedger();
+}
+
+function delLedger(id){
+  if(!confirm('Delete this payable and all recovery records?'))return;
+  DB.ledger=DB.ledger.filter(l=>l.id!==id);
+  DB.recoveries=DB.recoveries.filter(r=>r.ledger_id!==id);
+  save();renderLedger();
+}
+
+function openRecoveryModal(ledgerId){
+  const l=DB.ledger.find(x=>x.id===ledgerId);if(!l)return;
+  document.getElementById('rec-ledger-id').value=ledgerId;
+  document.getElementById('rec-amount').value=Math.min(l.emi||0,l.balance||0)||'';
+  document.getElementById('rec-notes').value='';
+  ['rec-month','rec-year'].forEach(id=>{
+    const el=document.getElementById(id);if(el.children.length)return;
+    if(id.includes('month'))MONTHS.forEach((m,i)=>{const o=document.createElement('option');o.value=i+1;o.textContent=m;if(i+1===now.getMonth()+1)o.selected=true;el.appendChild(o);});
+    else for(let y=now.getFullYear();y>=2024;y--){const o=document.createElement('option');o.value=y;o.textContent=y;if(y===now.getFullYear())o.selected=true;el.appendChild(o);}
+  });
+  updateRecPreview(ledgerId);
+  document.getElementById('rec-amount').oninput=()=>updateRecPreview(ledgerId);
+  document.getElementById('modal-recovery').classList.add('open');
+}
+
+function updateRecPreview(ledgerId){
+  const l=DB.ledger.find(x=>x.id===ledgerId);if(!l)return;
+  const amt=parseFloat(document.getElementById('rec-amount').value)||0;
+  const newBal=Math.max(0,(l.balance||0)-amt);
+  const col=LEDGER_COLORS[l.type]||LEDGER_COLORS.advance;
+  document.getElementById('rec-balance-preview').innerHTML='<div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px"><span style="color:var(--text-2)">'+l.description+'</span><span class="badge" style="background:'+col.bg+';color:'+col.text+'">'+(LEDGER_TYPES[l.type]||l.type)+'</span></div>'
+  +'<div style="display:flex;gap:20px;font-size:13px"><div><div style="font-size:10px;color:var(--text-2)">Current balance</div><div style="font-weight:600;color:var(--red-text)">'+aed(l.balance)+'</div></div><div style="color:var(--text-3);font-size:20px;align-self:center">→</div><div><div style="font-size:10px;color:var(--text-2)">After this recovery</div><div style="font-weight:600;color:'+(newBal<=0?'var(--green-text)':'var(--red-text)')+'">  '+(newBal<=0?'Fully cleared':aed(newBal))+'</div></div></div>';
+}
+
+function saveRecovery(){
+  const ledgerId=document.getElementById('rec-ledger-id').value;
+  const l=DB.ledger.find(x=>x.id===ledgerId);if(!l)return;
+  const amt=parseFloat(document.getElementById('rec-amount').value)||0;
+  if(!amt){alert('Enter a recovery amount.');return;}
+  const m=parseInt(document.getElementById('rec-month').value);
+  const y=parseInt(document.getElementById('rec-year').value);
+  const exists=DB.recoveries.find(r=>r.ledger_id===ledgerId&&r.period_month===m&&r.period_year===y);
+  if(exists&&!confirm('A recovery for '+MONTHS[m-1]+' '+y+' already exists ('+aed(exists.amount)+'). Add another?'))return;
+  DB.recoveries.push({id:uid(),ledger_id:ledgerId,employee_id:l.employee_id,employee_name:l.employee_name,
+    period_month:m,period_year:y,amount:amt,notes:document.getElementById('rec-notes').value,
+    created_at:new Date().toISOString()});
+  l.balance=Math.max(0,(l.balance||0)-amt);
+  if(l.balance<=0)l.status='cleared';
+  save();closeM('modal-recovery');renderLedger();
+}
+
+function delRecovery(recId,ledgerId){
+  if(!confirm('Delete this recovery? The balance will be restored.'))return;
+  const rec=DB.recoveries.find(r=>r.id===recId);
+  if(rec){const l=DB.ledger.find(x=>x.id===ledgerId);if(l){l.balance=Math.min(l.original_amount,(l.balance||0)+rec.amount);l.status='active';}DB.recoveries=DB.recoveries.filter(r=>r.id!==recId);}
+  save();renderLedger();
+}
+</script>
+
+<!-- Paste from Excel modal -->
+<div class="modal-bg" id="modal-paste">
+  <div class="modal" style="width:820px">
+    <div class="modal-t">Paste trips from Excel<button class="btn xs" onclick="closeM('modal-paste')">✕</button></div>
+    <div class="notice info" style="margin-bottom:1rem">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+      <div>In Excel, select and copy the data rows from the Trip Log sheet (columns B–J: Date, Driver Name, Customer, Route, Truck No, Trip Comm, Border Exp, Diesel Exp, Other Exp). Then click in the box below and press <strong>Ctrl+V</strong>.</div>
+    </div>
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;margin-bottom:1rem;font-size:11px;font-family:var(--mono);color:var(--text-2)">
+      Expected columns: <strong>Date · Driver Name · Customer · Route · Truck No · Trip Comm · Border Exp · Diesel Exp · Other Exp</strong>
+    </div>
+    <textarea id="paste-area" rows="6" placeholder="Click here, then press Ctrl+V to paste from Excel…" style="width:100%;padding:10px;border:1px solid var(--border-strong);border-radius:var(--r);font-size:12px;font-family:var(--mono);background:var(--surface);color:var(--text);resize:vertical" oninput="parsePaste()"></textarea>
+    <div id="paste-preview" style="margin-top:1rem"></div>
+    <div class="modal-ft">
+      <button class="btn" onclick="closeM('modal-paste')">Cancel</button>
+      <button class="btn pri" id="paste-confirm-btn" onclick="confirmPaste()" style="display:none">Import trips</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Add payable modal -->
+<div class="modal-bg" id="modal-ledger">
+  <div class="modal" style="width:520px">
+    <div class="modal-t"><span id="ledger-mt">Add payable</span><button class="btn xs" onclick="closeM('modal-ledger')">✕</button></div>
+    <input type="hidden" id="lm-id">
+    <div class="fg" style="margin-bottom:.875rem">
+      <div class="fgrp s2"><label>Employee</label><select id="lm-emp" style="width:100%"></select></div>
+      <div class="fgrp"><label>Date</label><input type="date" id="lm-date"></div>
+      <div class="fgrp"><label>Type</label>
+        <select id="lm-type">
+          <option value="advance">Salary advance / loan</option>
+          <option value="fine">Traffic fine (company paid)</option>
+          <option value="expense">Company expense on behalf</option>
+          <option value="overpayment">Overpayment recovery</option>
+        </select>
+      </div>
+      <div class="fgrp s2"><label>Description</label><input type="text" id="lm-desc" placeholder="e.g. Salary advance — April 2026"></div>
+      <div class="fgrp"><label>Reference / case no.</label><input type="text" id="lm-ref" placeholder="Optional"></div>
+      <div class="fgrp"><label>Total amount (AED)</label><input type="number" id="lm-amount" min="0" placeholder="0.00" oninput="updateLedgerEmiPreview()"></div>
+      <div class="fgrp"><label>Monthly EMI recovery (AED)<span style="font-size:10px;color:var(--text-3);font-weight:400;margin-left:6px">auto-deducted each payroll run</span></label><input type="number" id="lm-emi" min="0" placeholder="0.00" oninput="updateLedgerEmiPreview()"></div>
+      <div class="fgrp"><label>Recovery starts</label>
+        <select id="lm-start-month"></select>
+      </div>
+      <div class="fgrp"><label>Year</label>
+        <select id="lm-start-year"></select>
+      </div>
+    </div>
+    <div id="lm-emi-preview" style="background:var(--bg);border-radius:var(--r);padding:10px 12px;margin-bottom:.875rem;font-size:12px;display:none">
+      <div style="display:flex;gap:20px">
+        <div><div style="font-size:10px;color:var(--text-2)">Total amount</div><div id="lm-ep-total" style="font-weight:600;color:var(--red-text)"></div></div>
+        <div><div style="font-size:10px;color:var(--text-2)">Monthly EMI</div><div id="lm-ep-emi" style="font-weight:600"></div></div>
+        <div><div style="font-size:10px;color:var(--text-2)">Cleared in approx.</div><div id="lm-ep-months" style="font-weight:600"></div></div>
+      </div>
+    </div>
+    <div class="notice warn" style="margin-bottom:0">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span style="font-size:12px">The monthly EMI is auto-deducted from this employee's salary each payroll run until the balance reaches zero. You can override the amount any month from the ledger.</span>
+    </div>
+    <div class="modal-ft">
+      <button class="btn" onclick="closeM('modal-ledger')">Cancel</button>
+      <button class="btn pri" onclick="saveLedgerEntry()">Save payable</button>
+    </div>
+  </div>
+</div>
+
+<!-- Record recovery modal -->
+<div class="modal-bg" id="modal-recovery">
+  <div class="modal" style="width:440px">
+    <div class="modal-t">Record recovery<button class="btn xs" onclick="closeM('modal-recovery')">✕</button></div>
+    <input type="hidden" id="rec-ledger-id">
+    <div class="fg" style="margin-bottom:.875rem">
+      <div class="fgrp"><label>Month</label><select id="rec-month"></select></div>
+      <div class="fgrp"><label>Year</label><select id="rec-year"></select></div>
+      <div class="fgrp s2"><label>Amount recovered (AED)</label><input type="number" id="rec-amount" min="0"></div>
+      <div class="fgrp s2"><label>Notes</label><input type="text" id="rec-notes" placeholder="Optional"></div>
+    </div>
+    <div id="rec-balance-preview" style="background:var(--bg);border-radius:var(--r);padding:10px 12px;font-size:13px;margin-bottom:.875rem"></div>
+    <div class="modal-ft">
+      <button class="btn" onclick="closeM('modal-recovery')">Cancel</button>
+      <button class="btn pri" onclick="saveRecovery()">Record recovery</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
-
