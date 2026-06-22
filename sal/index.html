@@ -1360,6 +1360,7 @@ function confirmPaste(){
 
 /* ─── IMPORT EXCEL ─── */
 let importData={employees:[],rates:[],trips:[],deductions:[]};
+let _lastImportData=null;
 function renderImport(){monthSels('imp-month','imp-year');}
 function handleDrop(e){e.preventDefault();document.getElementById('drop-zone').style.borderColor='var(--border-strong)';const file=e.dataTransfer.files[0];if(file)readExcel(file);}
 function readExcel(file){
@@ -1514,6 +1515,7 @@ function parseWorkbook(wb,filename){
       }
     });
   });
+    _lastImportData = JSON.parse(JSON.stringify(importData)); // backup
   renderImportPreview();
 }
 function renderImportPreview(){
@@ -1545,19 +1547,31 @@ function renderImportPreview(){
 }
 function confirmImport(){
   const m=getM('imp-month'),y=getY('imp-year');const msg=[];
-  if(document.getElementById('opt-emp').checked&&importData.employees.length){DB.employees=importData.employees;msg.push(importData.employees.length+' employees');}
-  if(document.getElementById('opt-rates').checked&&importData.rates.length){DB.rates=importData.rates;msg.push(importData.rates.length+' rates');}
-  if(document.getElementById('opt-trips').checked&&importData.trips.length){
+  // Use _lastImportData as backup in case importData was reset
+  const iData = (importData.trips.length||importData.employees.length||importData.rates.length||importData.deductions.length)
+    ? importData : (_lastImportData||importData);
+  if(document.getElementById('opt-emp').checked&&iData.employees.length){DB.employees=iData.employees;msg.push(iData.employees.length+' employees');}
+  if(document.getElementById('opt-rates').checked&&iData.rates.length){DB.rates=iData.rates;msg.push(iData.rates.length+' rates');}
+  if(document.getElementById('opt-trips').checked&&iData.trips.length){
     DB.trips=DB.trips.filter(t=>!(t.period_month===m&&t.period_year===y));
-    DB.trips.push(...importData.trips.map(t=>({...t,period_month:m,period_year:y})));
-    msg.push(importData.trips.length+' trips for '+MONTHS[m-1]+' '+y);
+    DB.trips.push(...iData.trips.map(t=>({...t,period_month:m,period_year:y})));
+    msg.push(iData.trips.length+' trips for '+MONTHS[m-1]+' '+y);
   }
-  if(document.getElementById('opt-deds').checked&&importData.deductions.length){
+  if(document.getElementById('opt-deds').checked&&iData.deductions.length){
     DB.deds=DB.deds.filter(d=>!(d.period_month===m&&d.period_year===y));
-    DB.deds.push(...importData.deductions.map(d=>({...d,period_month:m,period_year:y})));
-    msg.push(importData.deductions.length+' deductions');
+    DB.deds.push(...iData.deductions.map(d=>({...d,period_month:m,period_year:y})));
+    msg.push(iData.deductions.length+' deductions');
   }
-  save();alert('Imported: '+msg.join(', ')+'.\n\nCheck Employees, Trip Log, or Deductions to review.');
+  if(!msg.length){alert('Nothing to import. Make sure trips or deductions are detected in the preview above, and the correct options are ticked.');return;}
+  save();
+  // Also push to Supabase if connected
+  if(sbUrl&&sbKey){
+    const h={apikey:sbKey,Authorization:'Bearer '+sbKey,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
+    if(document.getElementById('opt-trips').checked){
+      iData.trips.forEach(t=>fetch(sbUrl+'/rest/v1/trip_log',{method:'POST',headers:h,body:JSON.stringify({...t,period_month:m,period_year:y})}));
+    }
+  }
+  alert('Imported: '+msg.join(', ')+'.\n\nGo to Trip Log → May 2026 to review.');
 }
 
 
