@@ -310,13 +310,13 @@ tbody td{padding:8px 12px;vertical-align:middle}
     <div style="margin-top:1rem" id="imp-options">
       <div class="sdiv">Import options</div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:1rem">
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="opt-emp" checked> Import employees (replaces existing list)</label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="opt-rates" checked> Import commission rates (replaces existing rates)</label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="opt-trips" checked> Import trips into selected month</label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="opt-deds" checked> Import deductions into selected month</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="opt-emp"> Import employees (replaces existing list)</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="opt-rates"> Import commission rates (replaces existing rates)</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="opt-trips"> Import trips into selected month</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="opt-deds"> Import deductions into selected month</label>
       </div>
       <div style="display:flex;gap:10px;align-items:center;margin-bottom:1rem">
-        <label style="font-size:13px;color:var(--text-2)">Import trips/deductions into:</label>
+        <label style="font-size:13px;font-weight:500">Import trips/deductions into period:</label>
         <select id="imp-month" class="ri" style="width:130px"></select>
         <select id="imp-year" class="ri" style="width:90px"></select>
       </div>
@@ -1410,24 +1410,84 @@ function parseWorkbook(wb,filename){
       importData.rates.push({id:uid(),customer:strVals[0]||'',route:strVals[1]||strVals[0]||'',rate:row[numIdx]});
     });
   }
-  // Trips from Trip Log sheet
+  // Trips from Trip Log sheet (template or original Excel)
   const tripWs=wb.Sheets['Trip Log'];
   if(tripWs){
     const rows=XLSX.utils.sheet_to_json(tripWs,{header:1,defval:null,cellDates:true});
-    for(let ri=5;ri<rows.length;ri++){
-      const row=rows[ri];if(!row||!row[1])continue;
+    // Find header row - look for 'Date' in column B (index 1)
+    let dataStartRow=5; // default row 6 (0-indexed 5)
+    for(let ri=0;ri<Math.min(10,rows.length);ri++){
+      if(rows[ri]&&(rows[ri][1]==='Date'||rows[ri][2]==='Driver Name')){dataStartRow=ri+1;break;}
+    }
+    for(let ri=dataStartRow;ri<rows.length;ri++){
+      const row=rows[ri];
+      if(!row||row.every(v=>v===null||v===undefined||v===''))continue;
+      // Skip if both driver name and route are empty
+      const driverName=(row[2]||'').toString().trim();
+      const route=(row[4]||'').toString().trim();
+      if(!driverName&&!route)continue;
+      // Skip rows with no meaningful content at all
+      const hasContent=driverName||route||(typeof row[6]==='number'&&row[6]>0)||(typeof row[7]==='number'&&row[7]>0);
+      if(!hasContent)continue;
+      // Parse date
       const dateVal=row[1];let tripDate='';
       if(dateVal instanceof Date)tripDate=dateVal.toISOString().slice(0,10);
-      else if(typeof dateVal==='string'&&dateVal.includes('-'))tripDate=dateVal.slice(0,10);
-      else if(typeof dateVal==='number'){const d=new Date((dateVal-25569)*86400*1000);tripDate=d.toISOString().slice(0,10);}
-      const driverName=(row[2]||'').toString().trim();const route=(row[4]||'').toString().trim();
-      if(!driverName&&!route)continue;
-      const emp=DB.employees.find(e=>e.name===driverName)||importData.employees.find(e=>e.name===driverName);
-      importData.trips.push({id:uid(),employee_id:emp?.id||'',employee_name:driverName,trip_date:tripDate,
-        customer:(row[3]||'').toString().trim(),route,truck:(row[5]||'').toString().trim(),
-        trip_comm:typeof row[6]==='number'?row[6]:0,border_exp:typeof row[7]==='number'?row[7]:0,
-        diesel_exp:typeof row[8]==='number'?row[8]:0,other_exp:typeof row[9]==='number'?row[9]:0,
-        total:typeof row[10]==='number'?row[10]:0,from_loc:'',to_loc:'',notes:''});
+      else if(typeof dateVal==='string'&&dateVal.match(/\d{4}-\d{2}-\d{2}/))tripDate=dateVal.slice(0,10);
+      else if(typeof dateVal==='string'&&dateVal.match(/\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}/)){
+        const m=dateVal.match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/);
+        if(m){const yr=m[3].length===2?'20'+m[3]:m[3];tripDate=yr+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');}
+      }
+      else if(typeof dateVal==='number'&&dateVal>40000){const d=new Date((dateVal-25569)*86400*1000);tripDate=d.toISOString().slice(0,10);}
+      // Match employee
+      const emp=DB.employees.find(e=>e.name.toLowerCase()===driverName.toLowerCase())
+        ||DB.employees.find(e=>e.name.toLowerCase().includes(driverName.toLowerCase().split(' ')[0]))
+        ||importData.employees.find(e=>e.name.toLowerCase()===driverName.toLowerCase());
+      // Match rate for auto-fill if trip_comm is 0
+      const rateObj=DB.rates.find(r=>r.route.toLowerCase()===route.toLowerCase())
+        ||importData.rates.find(r=>r.route.toLowerCase()===route.toLowerCase());
+      const tripComm=typeof row[6]==='number'&&row[6]>0?row[6]:(rateObj?rateObj.rate:0);
+      const border=typeof row[7]==='number'?row[7]:0;
+      const diesel=typeof row[8]==='number'?row[8]:0;
+      const other=typeof row[9]==='number'?row[9]:0;
+      const total=typeof row[10]==='number'&&row[10]>0?row[10]:tripComm+border+diesel+other;
+      importData.trips.push({id:uid(),
+        employee_id:emp?.id||'',employee_name:emp?.name||driverName,
+        trip_date:tripDate,customer:(row[3]||rateObj?.customer||'').toString().trim(),
+        route:rateObj?.route||route,truck:(row[5]||'').toString().trim(),
+        trip_comm:tripComm,border_exp:border,diesel_exp:diesel,other_exp:other,total,
+        from_loc:'',to_loc:'',notes:''});
+    }
+  }
+  
+  // Also read Deductions sheet if present (from template)
+  const dedTemplateWs=wb.Sheets['Deductions'];
+  if(dedTemplateWs){
+    const rows=XLSX.utils.sheet_to_json(dedTemplateWs,{header:1,defval:null,cellDates:true});
+    let dataStart=5;
+    for(let ri=0;ri<Math.min(10,rows.length);ri++){
+      if(rows[ri]&&rows[ri][2]==='Employee Name'){dataStart=ri+1;break;}
+    }
+    for(let ri=dataStart;ri<rows.length;ri++){
+      const row=rows[ri];if(!row)continue;
+      const empName=(row[2]||'').toString().trim();
+      const amt=typeof row[8]==='number'?row[8]:0;
+      if(!empName||amt<=0)continue;
+      const dateVal=row[1];let dedDate='';
+      if(dateVal instanceof Date)dedDate=dateVal.toISOString().slice(0,10);
+      else if(typeof dateVal==='number'&&dateVal>40000){const d=new Date((dateVal-25569)*86400*1000);dedDate=d.toISOString().slice(0,10);}
+      const cat=(row[3]||'other').toString().toLowerCase();
+      let category='other';
+      if(cat.includes('fine'))category='fine';
+      else if(cat.includes('advance')||cat.includes('salary'))category='advance';
+      else if(cat.includes('leave')||cat.includes('lwp'))category='lwp';
+      const emp=DB.employees.find(e=>e.name.toLowerCase()===empName.toLowerCase())
+        ||importData.employees.find(e=>e.name.toLowerCase()===empName.toLowerCase());
+      importData.deductions.push({id:uid(),
+        employee_id:emp?.id||'',employee_name:emp?.name||empName,
+        ded_date:dedDate,category,
+        description:(row[5]||'').toString().trim()||'Imported deduction',
+        reference:(row[6]||'').toString().trim(),
+        amount:amt,traffic_points:parseInt(row[7])||0});
     }
   }
   // Deductions from Driver/Staff Section C
