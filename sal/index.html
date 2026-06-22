@@ -113,6 +113,34 @@ tbody td{padding:8px 12px;vertical-align:middle}
 .hb.open{display:block}
 .schema-block{background:#1A1A18;color:#E8E8E4;border-radius:var(--rl);padding:1.25rem;font-family:var(--mono);font-size:11px;line-height:1.7;overflow-x:auto;white-space:pre;margin-top:.875rem}
 .mono{font-family:var(--mono);font-size:11px}
+
+/* Toast notifications */
+.toast-container{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:14px 18px;min-width:280px;max-width:380px;box-shadow:0 4px 20px rgba(0,0,0,.12);font-size:13px;pointer-events:all;display:flex;align-items:flex-start;gap:10px;animation:slideIn .2s ease}
+.toast.success{border-left:3px solid #3DAA6A}
+.toast.error{border-left:3px solid #D94F3D}
+.toast.info{border-left:3px solid var(--blue-text)}
+.toast.warn{border-left:3px solid var(--amber-text)}
+.toast-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.toast-body{flex:1}
+.toast-title{font-weight:600;margin-bottom:2px}
+.toast-msg{font-size:12px;color:var(--text-2);line-height:1.5}
+.toast-close{background:none;border:none;cursor:pointer;color:var(--text-3);font-size:16px;padding:0;flex-shrink:0;line-height:1}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(20px)}}
+
+/* Confirm dialog */
+.confirm-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.confirm-bg.open{display:flex}
+.confirm-box{background:var(--surface);border-radius:var(--rl);padding:1.75rem;width:420px;box-shadow:0 8px 40px rgba(0,0,0,.14)}
+.confirm-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:1rem;font-size:20px}
+.confirm-icon.warn{background:var(--amber-bg);color:var(--amber-text)}
+.confirm-icon.danger{background:var(--red-bg);color:var(--red-text)}
+.confirm-icon.success{background:var(--green-bg);color:var(--green-text)}
+.confirm-icon.info{background:var(--blue-bg);color:var(--blue-text)}
+.confirm-title{font-size:16px;font-weight:600;margin-bottom:6px}
+.confirm-msg{font-size:13px;color:var(--text-2);line-height:1.6;margin-bottom:1.5rem;white-space:pre-line}
+.confirm-actions{display:flex;gap:8px;justify-content:flex-end}
 .empty{text-align:center;padding:3rem 1rem;color:var(--text-3);font-size:13px}
 .tag{display:inline-flex;align-items:center;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
 /* Trip log styles */
@@ -823,7 +851,7 @@ function saveTrip(){
   save();closeM('modal-trip');renderTrips();
 }
 
-function delTrip(id){if(confirm('Delete this trip?')){DB.trips=DB.trips.filter(t=>t.id!==id);save();renderTrips();}}
+async function delTrip(id){if(await showConfirm('Delete trip','This trip will be permanently removed.','Delete','btn dan','danger')){DB.trips=DB.trips.filter(t=>t.id!==id);save();renderTrips();}}
 
 /* ─── DEDUCTIONS ─── */
 function renderDeds(){
@@ -920,7 +948,7 @@ function saveDed(){
   save();closeM('modal-ded');renderDeds();
 }
 
-function delDed(id){if(confirm('Delete this deduction?')){DB.deds=DB.deds.filter(d=>d.id!==id);save();renderDeds();}}
+async function delDed(id){if(await showConfirm('Delete deduction','This deduction record will be permanently removed.','Delete','btn dan','danger')){DB.deds=DB.deds.filter(d=>d.id!==id);save();renderDeds();}}
 
 /* ─── RUN PAYROLL ─── */
 function renderRun(){
@@ -1053,11 +1081,16 @@ async function savePayroll(){
   });
 
   if(withEmail.length){
-    const doSend = confirm(`${summary}\n\n${withEmail.length} employee${withEmail.length>1?'s have':' has'} an email on file.\n\nSend salary slips now?`);
-    if(doSend) await sendSlipsForRun(run, lines, period);
-    else alert(`${summary}\n\nYou can send slips later from History → Send emails.`);
+    showConfirm(
+      'Payroll saved — send slips?',
+      `${run.employee_count} employees · ${aed(run.total_net)} net payable.\n${withEmail.length} employee${withEmail.length>1?'s have':' has'} an email on file. Send salary slips now?`,
+      'Send now','btn pri','success'
+    ).then(async doSend=>{
+      if(doSend) await sendSlipsForRun(run, lines, period);
+      else toast('Payroll saved',`${run.employee_count} employees · ${aed(run.total_net)} net. Send slips from History anytime.`,'success',6000);
+    });
   } else {
-    alert(`${summary}\n\nNo employee emails on file yet. Add emails in the Employees tab to enable auto-sending.`);
+    toast('Payroll saved',summary.replace('Payroll for ','').replace(' saved.','')+' — Add emails in Employees to enable slip sending.','success',6000);
   }
 }
 
@@ -1191,14 +1224,14 @@ function openEmpModal(){clearEmpF();document.getElementById('emp-mt').textConten
 function clearEmpF(){['emp-id','emp-name','emp-desig','emp-wp','emp-lc','emp-iban','emp-email'].forEach(id=>document.getElementById(id).value='');document.getElementById('emp-basic').value='0';document.getElementById('emp-sheet').value='Driver';}
 function editEmp(id){const e=DB.employees.find(x=>x.id===id);if(!e)return;document.getElementById('emp-id').value=e.id;document.getElementById('emp-name').value=e.name;document.getElementById('emp-sheet').value=e.sheet;document.getElementById('emp-desig').value=e.designation||'';document.getElementById('emp-wp').value=e.work_permit||'';document.getElementById('emp-lc').value=e.labor_card||'';document.getElementById('emp-iban').value=e.iban||'';document.getElementById('emp-basic').value=e.basic_salary||0;document.getElementById('emp-email').value=e.email||'';document.getElementById('emp-mt').textContent='Edit employee';document.getElementById('modal-emp').classList.add('open');}
 function saveEmp(){const id=document.getElementById('emp-id').value;const e={id:id||uid(),name:document.getElementById('emp-name').value,sheet:document.getElementById('emp-sheet').value,designation:document.getElementById('emp-desig').value,work_permit:document.getElementById('emp-wp').value,labor_card:document.getElementById('emp-lc').value,iban:document.getElementById('emp-iban').value,basic_salary:parseFloat(document.getElementById('emp-basic').value)||0,email:document.getElementById('emp-email').value};if(id)DB.employees=DB.employees.map(x=>x.id===id?e:x);else DB.employees.push(e);save();closeM('modal-emp');renderEmps();}
-function delEmp(id){if(confirm('Delete?')){DB.employees=DB.employees.filter(e=>e.id!==id);save();renderEmps();}}
+function delEmp(id){showConfirm('Delete employee','This employee will be removed from the system.','Delete','btn dan','danger').then(ok=>{if(ok){DB.employees=DB.employees.filter(e=>e.id!==id);save();renderEmps();}});}
 
 /* ─── RATES ─── */
 function renderRates(){document.getElementById('rates-tb').innerHTML=DB.rates.map(r=>`<tr><td>${r.customer||'—'}</td><td style="font-weight:500">${r.route}</td><td>${aed(r.rate)}</td><td><div style="display:flex;gap:6px"><button class="btn xs" onclick="editRate('${r.id}')">Edit</button><button class="btn xs dan" onclick="delRate('${r.id}')">Del</button></div></td></tr>`).join('');}
 function openRateModal(){document.getElementById('rate-id').value='';document.getElementById('rate-cust').value='';document.getElementById('rate-route').value='';document.getElementById('rate-amt').value='';document.getElementById('modal-rate').classList.add('open');}
 function editRate(id){const r=DB.rates.find(x=>x.id===id);if(!r)return;document.getElementById('rate-id').value=r.id;document.getElementById('rate-cust').value=r.customer||'';document.getElementById('rate-route').value=r.route;document.getElementById('rate-amt').value=r.rate;document.getElementById('modal-rate').classList.add('open');}
 function saveRate(){const id=document.getElementById('rate-id').value;const r={id:id||uid(),customer:document.getElementById('rate-cust').value,route:document.getElementById('rate-route').value,rate:parseFloat(document.getElementById('rate-amt').value)||0};if(id)DB.rates=DB.rates.map(x=>x.id===id?r:x);else DB.rates.push(r);save();closeM('modal-rate');renderRates();}
-function delRate(id){if(confirm('Delete?')){DB.rates=DB.rates.filter(r=>r.id!==id);save();renderRates();}}
+function delRate(id){showConfirm('Delete rate','This commission rate will be removed.','Delete','btn dan','danger').then(ok=>{if(ok){DB.rates=DB.rates.filter(r=>r.id!==id);save();renderRates();}});}
 
 /* ─── SETTINGS ─── */
 function loadSettings(){
@@ -1210,11 +1243,11 @@ function loadSettings(){
 }
 function saveSB(){sbUrl=document.getElementById('sb-url').value.trim();sbKey=document.getElementById('sb-key').value.trim();localStorage.setItem('sb_url',sbUrl);localStorage.setItem('sb_key',sbKey);}
 function toggleSchema(){const el=document.getElementById('sb-schema');el.style.display=el.style.display==='none'?'block':'none';}
-function copySchema(){navigator.clipboard.writeText(SCHEMA).then(()=>alert('Copied.'));}
+function copySchema(){navigator.clipboard.writeText(SCHEMA).then(()=>toast('Copied','SQL schema copied to clipboard.','success',2000));}
 function saveCo(){DB.company={name:document.getElementById('co-name').value,addr:document.getElementById('co-addr').value,wps:parseFloat(document.getElementById('co-wps').value)||5,vat:parseFloat(document.getElementById('co-vat').value)||0.25};save();alert('Saved.');}
 
 async function testSB(){
-  if(!sbUrl||!sbKey){alert('Enter URL and key first.');return;}
+  if(!sbUrl||!sbKey){toast('Missing credentials','Enter Project URL and Publishable key first.','warn');return;}
   setSt('Testing…','');
   try{const r=await fetch(`${sbUrl}/rest/v1/employees?select=id&limit=1`,{headers:{apikey:sbKey,Authorization:'Bearer '+sbKey}});
     if(r.ok){setSt('Connected.','ok');setDot(true);}
@@ -1224,8 +1257,8 @@ async function testSB(){
 }
 
 async function runSchema(){
-  if(!sbUrl||!sbKey){alert('Enter URL and key first.');return;}
-  if(!confirm('Create tables in your Supabase project?'))return;
+  if(!sbUrl||!sbKey){toast('Missing credentials','Enter Project URL and Publishable key first.','warn');return;}
+  if(!await showConfirm('Create database tables','This will run the SQL schema in your Supabase project to create all required tables.','Run schema','btn pri','info'))return;
   setSt('Running…','');
   try{
     const stmts=SCHEMA.split(';').map(s=>s.trim()).filter(s=>s&&!s.startsWith('--'));
@@ -1378,7 +1411,7 @@ function readExcel(file){
   const reader=new FileReader();
   reader.onload=function(e){
     try{const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});parseWorkbook(wb,file.name);}
-    catch(err){alert('Could not read file: '+err.message);}
+    catch(err){toast('Could not read file',err.message,'error');}
   };
   reader.readAsArrayBuffer(file);
 }
@@ -1575,7 +1608,7 @@ function confirmImport(){
     DB.deds.push(...iData.deductions.map(d=>({...d,period_month:m,period_year:y})));
     msg.push(iData.deductions.length+' deductions');
   }
-  if(!msg.length){alert('Nothing to import. Make sure trips or deductions are detected in the preview above, and the correct options are ticked.');return;}
+  if(!msg.length){toast('Nothing to import','Make sure the file has data and the correct options are ticked in Import Options.','warn');return;}
   save();
   // Also push to Supabase if connected
   if(sbUrl&&sbKey){
@@ -1584,7 +1617,7 @@ function confirmImport(){
       iData.trips.forEach(t=>fetch(sbUrl+'/rest/v1/trip_log',{method:'POST',headers:h,body:JSON.stringify({...t,period_month:m,period_year:y})}));
     }
   }
-  alert('Imported: '+msg.join(', ')+'.\n\nGo to Trip Log → May 2026 to review.');
+  toast('Import complete',msg.join(' · '),'success',5000);
 }
 
 
@@ -1605,7 +1638,7 @@ function handleDedFile(file){
 
 function processDedFile(file){
   if(file.size > 4*1024*1024){
-    alert('File is too large. Maximum size is 4 MB.');
+    toast('File too large','Maximum attachment size is 4 MB. Please compress or use a smaller file.','error');
     return;
   }
   const reader=new FileReader();
@@ -1678,6 +1711,35 @@ function downloadDedAttach(dedId){
   a.click();
 }
 
+
+/* ─── TOAST & CONFIRM SYSTEM ─── */
+function toast(title, msg='', type='info', duration=4000){
+  const icons={success:'✓',error:'✗',info:'ℹ',warn:'⚠'};
+  const t=document.createElement('div');
+  t.className=`toast ${type}`;
+  t.innerHTML=`<span class="toast-icon">${icons[type]||'ℹ'}</span><div class="toast-body"><div class="toast-title">${title}</div>${msg?`<div class="toast-msg">${msg}</div>`:''}</div><button class="toast-close" onclick="this.closest('.toast').remove()">✕</button>`;
+  document.getElementById('toast-container').appendChild(t);
+  setTimeout(()=>{t.style.animation='slideOut .2s ease forwards';setTimeout(()=>t.remove(),200);},duration);
+}
+
+function showConfirm(title, msg, okLabel='Confirm', okClass='btn pri', type='warn'){
+  return new Promise(resolve=>{
+    const icons={warn:'⚠',danger:'✕',success:'✓',info:'ℹ'};
+    document.getElementById('confirm-icon').textContent=icons[type]||'⚠';
+    document.getElementById('confirm-icon').className=`confirm-icon ${type}`;
+    document.getElementById('confirm-title').textContent=title;
+    document.getElementById('confirm-msg').textContent=msg;
+    const okBtn=document.getElementById('confirm-ok-btn');
+    const cancelBtn=document.getElementById('confirm-cancel-btn');
+    okBtn.textContent=okLabel;
+    okBtn.className=okClass;
+    document.getElementById('confirm-bg').classList.add('open');
+    const cleanup=()=>document.getElementById('confirm-bg').classList.remove('open');
+    okBtn.onclick=()=>{cleanup();resolve(true);};
+    cancelBtn.onclick=()=>{cleanup();resolve(false);};
+  });
+}
+
 /* ─── EMAIL SENDING ─── */
 async function sendSlipsForRun(run, lines, period){
   const withEmail=lines.filter(L=>{const e=DB.employees.find(x=>x.id===L.employee_id);return e&&e.email&&e.email.includes('@');});
@@ -1706,7 +1768,7 @@ async function sendSlipsForRun(run, lines, period){
     }catch(err){failed++;console.error(err);}
   }
   document.body.removeChild(toast);
-  alert('Salary slips sent.\n✓ '+sent+' delivered'+(failed>0?'\n✗ '+failed+' failed — check console':''));
+  toast(sent+' salary slip'+(sent!==1?'s':'')+' sent',failed>0?failed+' failed — check browser console':'All delivered successfully.',failed>0?'warn':'success',5000);
 }
 
 async function sendRunSlips(runId){
@@ -1714,8 +1776,8 @@ async function sendRunSlips(runId){
   const lines=DB.lines.filter(l=>l.run_id===runId);
   const period=MONTHS[run.period_month-1]+' '+run.period_year;
   const withEmail=lines.filter(L=>{const e=DB.employees.find(x=>x.id===L.employee_id);return e&&e.email&&e.email.includes('@');});
-  if(!withEmail.length){alert('No employees in this run have email addresses on file.');return;}
-  if(!confirm('Send salary slips for '+period+' to '+withEmail.length+' employee'+(withEmail.length>1?'s':'')+'?'))return;
+  if(!withEmail.length){toast('No emails on file','Add email addresses in the Employees tab first.','warn');return;}
+  if(!await showConfirm('Send salary slips','Send '+period+' slips to '+withEmail.length+' employee'+(withEmail.length>1?'s':'')+'?','Send now','btn pri','info'))return;
   await sendSlipsForRun(run,lines,period);
 }
 
@@ -1927,7 +1989,7 @@ function saveLedgerEntry(){
   const empId=document.getElementById('lm-emp').value;const emp=DB.employees.find(e=>e.id===empId);
   const origAmt=parseFloat(document.getElementById('lm-amount').value)||0;
   const type=document.getElementById('lm-type').value;
-  if(!origAmt){alert('Please enter an amount.');return;}
+  if(!origAmt){toast('Amount required','Please enter the total payable amount.','warn');return;}
   if(id){
     const ex=DB.ledger.find(x=>x.id===id);
     const recTotal=DB.recoveries.filter(r=>r.ledger_id===id).reduce((s,r)=>s+r.amount,0);
@@ -1950,8 +2012,8 @@ function saveLedgerEntry(){
   save();closeM('modal-ledger');renderLedger();
 }
 
-function delLedger(id){
-  if(!confirm('Delete this payable and all recovery records?'))return;
+async function delLedger(id){
+  if(!await showConfirm('Delete payable','This will permanently remove the payable and all its recovery records.','Delete','btn dan','danger'))return;
   DB.ledger=DB.ledger.filter(l=>l.id!==id);
   DB.recoveries=DB.recoveries.filter(r=>r.ledger_id!==id);
   save();renderLedger();
@@ -1981,15 +2043,15 @@ function updateRecPreview(ledgerId){
   +'<div style="display:flex;gap:20px;font-size:13px"><div><div style="font-size:10px;color:var(--text-2)">Current balance</div><div style="font-weight:600;color:var(--red-text)">'+aed(l.balance)+'</div></div><div style="color:var(--text-3);font-size:20px;align-self:center">→</div><div><div style="font-size:10px;color:var(--text-2)">After this recovery</div><div style="font-weight:600;color:'+(newBal<=0?'var(--green-text)':'var(--red-text)')+'">  '+(newBal<=0?'Fully cleared':aed(newBal))+'</div></div></div>';
 }
 
-function saveRecovery(){
+async function saveRecovery(){
   const ledgerId=document.getElementById('rec-ledger-id').value;
   const l=DB.ledger.find(x=>x.id===ledgerId);if(!l)return;
   const amt=parseFloat(document.getElementById('rec-amount').value)||0;
-  if(!amt){alert('Enter a recovery amount.');return;}
+  if(!amt){toast('Amount required','Please enter the recovery amount.','warn');return;}
   const m=parseInt(document.getElementById('rec-month').value);
   const y=parseInt(document.getElementById('rec-year').value);
   const exists=DB.recoveries.find(r=>r.ledger_id===ledgerId&&r.period_month===m&&r.period_year===y);
-  if(exists&&!confirm('A recovery for '+MONTHS[m-1]+' '+y+' already exists ('+aed(exists.amount)+'). Add another?'))return;
+  if(exists&&!await showConfirm('Duplicate recovery','A recovery for '+MONTHS[m-1]+' '+y+' already exists ('+aed(exists.amount)+'). Add another?','Add anyway','btn pri','warn'))return;
   DB.recoveries.push({id:uid(),ledger_id:ledgerId,employee_id:l.employee_id,employee_name:l.employee_name,
     period_month:m,period_year:y,amount:amt,notes:document.getElementById('rec-notes').value,
     created_at:new Date().toISOString()});
@@ -1998,8 +2060,8 @@ function saveRecovery(){
   save();closeM('modal-recovery');renderLedger();
 }
 
-function delRecovery(recId,ledgerId){
-  if(!confirm('Delete this recovery? The balance will be restored.'))return;
+async function delRecovery(recId,ledgerId){
+  if(!await showConfirm('Delete recovery','The balance will be restored when this recovery is deleted.','Delete','btn dan','danger'))return;
   const rec=DB.recoveries.find(r=>r.id===recId);
   if(rec){const l=DB.ledger.find(x=>x.id===ledgerId);if(l){l.balance=Math.min(l.original_amount,(l.balance||0)+rec.amount);l.status='active';}DB.recoveries=DB.recoveries.filter(r=>r.id!==recId);}
   save();renderLedger();
@@ -2091,5 +2153,21 @@ function delRecovery(recId,ledgerId){
   </div>
 </div>
 
+
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- Confirm dialog -->
+<div class="confirm-bg" id="confirm-bg">
+  <div class="confirm-box">
+    <div class="confirm-icon" id="confirm-icon">⚠</div>
+    <div class="confirm-title" id="confirm-title">Confirm</div>
+    <div class="confirm-msg" id="confirm-msg"></div>
+    <div class="confirm-actions">
+      <button class="btn" id="confirm-cancel-btn">Cancel</button>
+      <button class="btn" id="confirm-ok-btn">Confirm</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
