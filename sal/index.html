@@ -1000,11 +1000,23 @@ async function delDed(id){if(await showConfirm('Delete deduction','This deductio
 
 /* ─── RUN PAYROLL ─── */
 function renderRun(){
+  if(!DB.employees||!DB.employees.length){
+    // Employees not loaded yet — show spinner and retry after sync
+    document.getElementById('run-tw').innerHTML='<div class="empty" style="padding:2rem"><div style="margin-bottom:8px">⏳ Syncing data...</div><div style="font-size:12px;color:var(--text-3)">Employee data is loading from Supabase.</div></div>';
+    // Try again after a moment
+    setTimeout(()=>{if(DB.employees&&DB.employees.length)buildRunTable();},2000);
+    return;
+  }
   buildRunTable();
 }
 
 function buildRunTable(){
   const m=getM('run-month'),y=getY('run-year');
+  // If no employees loaded yet, show loading state
+  if(!DB.employees||!DB.employees.length){
+    document.getElementById('run-tw').innerHTML='<div class="empty" style="padding:2rem">Loading employee data... If this persists, check your Supabase connection in Settings.</div>';
+    return;
+  }
   const existRun=DB.runs.find(r=>r.period_month===m&&r.period_year===y);
   const existLines=existRun?DB.lines.filter(l=>l.run_id===existRun.id):[];
   runOverrides={};
@@ -1954,12 +1966,24 @@ async function syncFromSupabase(){
     document.getElementById('conn-lbl').textContent = currentUser?.email||'Synced';
     console.log(`Synced: ${sbEmps.length} employees, ${sbRuns.length} runs, ${sbTrips.length} trips`);
 
-    // Re-render dashboard
-    renderDash();
+    // Re-render current active page so data shows immediately
+    const activePage = document.querySelector('.page.active');
+    if(activePage){
+      const pageId = activePage.id.replace('page-','');
+      const renders={dashboard:renderDash,trips:renderTrips,deductions:renderDeds,
+        run:buildRunTable,history:renderHistory,employees:renderEmps,
+        rates:renderRates,earntypes:renderEarnTypes,ledger:renderLedger};
+      if(renders[pageId]) renders[pageId]();
+      else renderDash();
+    } else {
+      renderDash();
+    }
 
   } catch(e){
     console.error('Sync error:',e);
     document.getElementById('conn-lbl').textContent='Sync failed';
+    // Even if sync fails, render with local data
+    renderDash();
   }
 }
 
