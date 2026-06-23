@@ -1052,10 +1052,13 @@ function buildRunTable(){
 
 function renderRunRows(){
   const tb=document.getElementById('run-tb');if(!tb)return;
+  const m=document.getElementById('run-month')?getM('run-month'):now.getMonth()+1;
+  const y=document.getElementById('run-year')?getY('run-year'):now.getFullYear();
   tb.innerHTML=DB.employees.map(e=>{
-    const L=runOverrides[e.id];const net=calcNet(L);
-    const hasAutoTrip=DB.trips.some(t=>t.period_month===getM('run-month')&&t.period_year===getY('run-year')&&t.employee_id===e.id);
-    const hasAutoDed=DB.deds.some(d=>d.period_month===getM('run-month')&&d.period_year===getY('run-year')&&d.employee_id===e.id);
+    const L=runOverrides[e.id];if(!L)return '';
+    const net=calcNet(L,m,y);
+    const hasAutoTrip=DB.trips.some(t=>t.period_month===m&&t.period_year===y&&(t.employee_id===e.id||(t.employee_id===''&&t.employee_name===e.name)));
+    const hasAutoDed=DB.deds.some(d=>d.period_month===m&&d.period_year===y&&(d.employee_id===e.id||(d.employee_id===''&&d.employee_name===e.name)));
     return `<tr>
       <td><div style="font-weight:500;font-size:12px">${e.name}</div><span class="badge ${e.sheet==='Driver'?'b-dr':'b-st'}" style="margin-top:3px">${e.sheet}</span></td>
       <td><input class="ri" type="number" min="0" max="31" value="${L.worked_days}" style="width:55px" oninput="updR('${e.id}','worked_days',this.value)"></td>
@@ -1079,18 +1082,27 @@ function renderRunRows(){
 }
 
 function calcBasic(L){const t=L.total_days||30,w=parseInt(L.worked_days)||0;return w>=t?(L.basic_salary||0):((L.basic_salary||0)/t)*w;}
-function calcNet(L){
-  const m=getM('run-month')||now.getMonth()+1, y=getY('run-year')||now.getFullYear();
-  const customTotal = L.employee_id ? totalCustomEarns(L.employee_id, m, y) : 0;
+function calcNet(L, m, y){
+  // m and y are optional - fall back to reading from DOM safely
+  const pm = m || (document.getElementById('run-month') ? getM('run-month') : now.getMonth()+1);
+  const py = y || (document.getElementById('run-year') ? getY('run-year') : now.getFullYear());
+  const customTotal = L && L.employee_id ? totalCustomEarns(L.employee_id, pm, py) : 0;
   return Math.max(0,calcBasic(L)+(parseFloat(L.trip_commission)||0)+(parseFloat(L.other_commission)||0)+customTotal-(parseFloat(L.advances)||0));
 }
 function updR(id,field,val){
-  const L=runOverrides[id];L[field]=isNaN(parseFloat(val))?val:parseFloat(val);
-  const net=calcNet(L);L.net_payable=net;
+  const L=runOverrides[id];if(!L)return;
+  L[field]=isNaN(parseFloat(val))?val:parseFloat(val);
+  const m=getM('run-month'),y=getY('run-year');
+  const net=calcNet(L,m,y);L.net_payable=net;
   const el=document.getElementById('net-'+id);if(el)el.textContent=net>0?aed(net):'—';
   updateTot();
 }
-function updateTot(){const t=Object.values(runOverrides).reduce((s,L)=>s+calcNet(L),0);const el=document.getElementById('run-tot');if(el)el.textContent=aed(t);}
+function updateTot(){
+  const m=document.getElementById('run-month')?getM('run-month'):now.getMonth()+1;
+  const y=document.getElementById('run-year')?getY('run-year'):now.getFullYear();
+  const t=Object.values(runOverrides).reduce((s,L)=>s+calcNet(L,m,y),0);
+  const el=document.getElementById('run-tot');if(el)el.textContent=aed(t);
+}
 
 async function savePayroll(){
   const m=getM('run-month'),y=getY('run-year');
@@ -1875,8 +1887,16 @@ async function syncFromSupabase(){
       fetch(`${sbUrl}/rest/v1/deductions?select=*`,{headers:h}),
     ]);
 
-    if(!empR.ok && empR.status===404){
-      document.getElementById('conn-lbl').textContent='Connected (tables missing — run schema)';
+    if(!empR.ok){
+      if(empR.status===404){
+        document.getElementById('conn-lbl').textContent='Connected (tables missing — run schema)';
+      } else if(empR.status===400||empR.status===401){
+        document.getElementById('conn-lbl').textContent='Auth error — please sign in again';
+        // Try to refresh session
+        if(supabaseClient) await supabaseClient.auth.refreshSession().catch(()=>{});
+      } else {
+        document.getElementById('conn-lbl').textContent=`Sync error (${empR.status})`;
+      }
       return;
     }
 
