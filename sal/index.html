@@ -1327,7 +1327,12 @@ function closeM(id){document.getElementById(id).classList.remove('open');}
 
 // Init
 sbUrl=localStorage.getItem('sb_url')||'';sbKey=localStorage.getItem('sb_key')||'';
-if(sbUrl&&sbKey){document.getElementById('conn-dot').className='dot ok';document.getElementById('conn-lbl').textContent='Supabase configured';}
+if(sbUrl&&sbKey){
+  document.getElementById('conn-dot').className='dot ok';
+  document.getElementById('conn-lbl').textContent='Supabase configured';
+  // Pull latest data from Supabase on load
+  setTimeout(()=>syncFromSupabase(),500);
+}
 // Pre-initialise all month/year selects so pages show data immediately
 ['trip-month','trip-year','ded-month','ded-year','run-month','run-year','imp-month','imp-year'].forEach(id=>{
   const el=document.getElementById(id);
@@ -1748,6 +1753,112 @@ function showConfirm(title, msg, okLabel='Confirm', okClass='btn pri', type='war
     okBtn.onclick=()=>{cleanup();resolve(true);};
     cancelBtn.onclick=()=>{cleanup();resolve(false);};
   });
+}
+
+
+/* ─── SUPABASE SYNC (pull on load) ─── */
+async function syncFromSupabase(){
+  if(!sbUrl||!sbKey) return;
+  const h={apikey:sbKey,Authorization:'Bearer '+sbKey};
+  try{
+    // Show syncing indicator
+    document.getElementById('conn-lbl').textContent='Syncing...';
+
+    // Pull all tables
+    const [empR,ratesR,runsR,linesR,tripsR,dedsR,ledgerR,recovR] = await Promise.all([
+      fetch(`${sbUrl}/rest/v1/employees?select=*&order=name`,{headers:h}),
+      fetch(`${sbUrl}/rest/v1/commission_rates?select=*`,{headers:h}),
+      fetch(`${sbUrl}/rest/v1/payroll_runs?select=*&order=period_year.desc,period_month.desc`,{headers:h}),
+      fetch(`${sbUrl}/rest/v1/payroll_lines?select=*`,{headers:h}),
+      fetch(`${sbUrl}/rest/v1/trip_log?select=*`,{headers:h}),
+      fetch(`${sbUrl}/rest/v1/deductions?select=*`,{headers:h}),
+      fetch(`${sbUrl}/rest/v1/employees?select=id&limit=1`,{headers:h}), // test
+      fetch(`${sbUrl}/rest/v1/payroll_runs?select=id&limit=1`,{headers:h}), // test
+    ]);
+
+    // Check if tables exist (404 = not created yet)
+    if(!empR.ok && empR.status===404){
+      document.getElementById('conn-lbl').textContent='Connected (no tables)';
+      return;
+    }
+
+    const [emps,rates,runs,lines,trips,deds] = await Promise.all([
+      empR.ok?empR.json():[],
+      ratesR.ok?ratesR.json():[],
+      runsR.ok?runsR.json():[],
+      linesR.ok?linesR.json():[],
+      tripsR.ok?tripsR.json():[],
+      dedsR.ok?dedsR.json():[],
+    ]);
+
+    // Also fetch ledger and recoveries
+    const [ledgerRes,recovRes] = await Promise.all([
+      fetch(`${sbUrl}/rest/v1/employee_ledger?select=*`,{headers:h}),
+      fetch(`${sbUrl}/rest/v1/ledger_recoveries?select=*`,{headers:h}),
+    ]);
+    const ledger=ledgerRes.ok?await ledgerRes.json():[];
+    const recoveries=recovRes.ok?await recovRes.json():[];
+
+    // Only update if Supabase has data
+    if(emps.length) DB.employees=emps.map(e=>({
+      id:e.id,name:e.name,sheet:e.sheet||'Driver',designation:e.designation||'',
+      work_permit:e.work_permit||'',labor_card:e.labor_card||'',
+      iban:e.iban||'',basic_salary:parseFloat(e.basic_salary)||0,email:e.email||''
+    }));
+    if(rates.length) DB.rates=rates.map(r=>({id:r.id,customer:r.customer||'',route:r.route,rate:parseFloat(r.rate)||0}));
+    if(runs.length) DB.runs=runs;
+    if(lines.length) DB.lines=lines.map(l=>({...l,
+      trip_commission:parseFloat(l.trip_commission)||0,
+      other_commission:parseFloat(l.other_commission)||0,
+      advances:parseFloat(l.advances)||0,
+      net_payable:parseFloat(l.net_payable)||0,
+      total_fixed:parseFloat(l.total_fixed)||0,
+      total_variable:parseFloat(l.total_variable)||0,
+    }));
+    if(trips.length) DB.trips=trips.map(t=>({...t,
+      trip_comm:parseFloat(t.trip_comm)||0,
+      border_exp:parseFloat(t.border_exp)||0,
+      diesel_exp:parseFloat(t.diesel_exp)||0,
+      other_exp:parseFloat(t.other_exp)||0,
+      total:parseFloat(t.total)||0,
+    }));
+    if(deds.length) DB.deds=deds.map(d=>({...d,amount:parseFloat(d.amount)||0}));
+    if(ledger.length) DB.ledger=ledger;
+    if(recoveries.length) DB.recoveries=recoveries;
+
+    // Persist to localStorage as cache
+    save();
+
+    document.getElementById('conn-dot').className='dot ok';
+    document.getElementById('conn-lbl').textContent='Synced';
+    console.log(`Synced from Supabase: ${emps.length} employees, ${runs.length} runs, ${lines.length} lines, ${trips.length} trips`);
+
+    // Re-render current page
+    renderDash();
+
+  } catch(e){
+    console.error('Sync error:',e);
+    document.getElementById('conn-lbl').textContent='Sync failed';
+  }
+}
+
+// Also push employees and rates to Supabase on first setup
+async function pushInitialData(){
+  if(!sbUrl||!sbKey) return;
+  const h={apikey:sbKey,Authorization:'Bearer '+sbKey,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
+  try{
+    for(const e of DB.employees){
+      await fetch(`${sbUrl}/rest/v1/employees`,{method:'POST',headers:h,
+        body:JSON.stringify({id:e.id,name:e.name,sheet:e.sheet,designation:e.designation,
+          work_permit:e.work_permit,labor_card:e.labor_card,iban:e.iban,
+          basic_salary:e.basic_salary,email:e.email||''})});
+    }
+    for(const r of DB.rates){
+      await fetch(`${sbUrl}/rest/v1/commission_rates`,{method:'POST',headers:h,
+        body:JSON.stringify({id:r.id,customer:r.customer,route:r.route,rate:r.rate})});
+    }
+    console.log('Initial data pushed to Supabase');
+  }catch(e){console.error('Push initial:',e);}
 }
 
 /* ─── EMAIL SENDING ─── */
