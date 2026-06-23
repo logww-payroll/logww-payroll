@@ -193,6 +193,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
   <div class="sb-sec">Setup</div>
   <div class="sb-item" onclick="nav('employees',this)"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75M21 21v-2a4 4 0 0 0-3-3.85"/></svg>Employees</div>
   <div class="sb-item" onclick="nav('rates',this)"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 7h6M9 12h6M9 17h4"/><rect x="4" y="3" width="16" height="18" rx="2"/></svg>Commission rates</div>
+  <div class="sb-item" onclick="nav('earntypes',this)"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" width="16" height="16"><path d="M12 8v8M8 12h8"/><circle cx="12" cy="12" r="9"/></svg>Earnings types</div>
   <div class="sb-item" onclick="nav('settings',this)"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>Settings</div>
   <div class="sb-foot">
     <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
@@ -275,6 +276,27 @@ tbody td{padding:8px 12px;vertical-align:middle}
   <div class="ph"><div><div class="ph-t">Commission rates</div><div class="ph-s">Rate per route — used by trip log to auto-calculate commission</div></div>
     <button class="btn pri" onclick="openRateModal()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add rate</button></div>
   <div class="tw"><table><thead><tr><th>Customer</th><th>Route / trip type</th><th>Rate (AED per trip)</th><th></th></tr></thead><tbody id="rates-tb"></tbody></table></div>
+</div>
+
+<!-- EARNINGS TYPES -->
+<div class="page" id="page-earntypes">
+  <div class="ph">
+    <div><div class="ph-t">Earnings types</div><div class="ph-s">Define recurring variable pay items — appear automatically each month in Run Payroll</div></div>
+    <button class="btn pri" onclick="openEarnTypeModal()">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      Add earnings type
+    </button>
+  </div>
+  <div class="notice info">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+    <div>Recurring types auto-appear in Run Payroll every month with a zero amount — just fill in who earned what. One-off types must be added manually per employee per month in Run Payroll.</div>
+  </div>
+  <div class="tw">
+    <table>
+      <thead><tr><th>Label</th><th>Type</th><th>Description</th><th>Appears in slip as</th><th>Active</th><th></th></tr></thead>
+      <tbody id="earn-types-tb"></tbody>
+    </table>
+  </div>
 </div>
 
 <!-- SETTINGS -->
@@ -648,6 +670,8 @@ let DB={
   lines:safeGet('pl_lines', []),
   ledger:safeGet('pl_ledger', []),
   recoveries:safeGet('pl_recoveries', []),
+  earnTypes:safeGet('pl_earn_types',[]),
+  customEarns:JSON.parse(localStorage.getItem('pl_cearns')||'[]'),
   company:safeGet('pl_co', {name:'Logistique World Wide LLC',addr:'117A, Arenco Offices DIP-1, Dubai',wps:5,vat:0.25}),
 };
 
@@ -661,6 +685,8 @@ function save(){
   localStorage.setItem('pl_co',JSON.stringify(DB.company));
   localStorage.setItem('pl_ledger',JSON.stringify(DB.ledger));
   localStorage.setItem('pl_recoveries',JSON.stringify(DB.recoveries));
+  localStorage.setItem('pl_earn_types',JSON.stringify(DB.earnTypes));
+  localStorage.setItem('pl_cearns',JSON.stringify(DB.customEarns));
 }
 
 function uid(){return 'id-'+Date.now()+'-'+Math.random().toString(36).slice(2);}
@@ -675,7 +701,7 @@ function nav(page,el){
   document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
   el.classList.add('active');
-  ({dashboard:renderDash,trips:renderTrips,deductions:renderDeds,run:renderRun,history:renderHistory,employees:renderEmps,rates:renderRates,settings:loadSettings,import:renderImport,ledger:renderLedger})[page]?.();
+  ({dashboard:renderDash,trips:renderTrips,deductions:renderDeds,run:renderRun,history:renderHistory,employees:renderEmps,rates:renderRates,earntypes:renderEarnTypes,settings:loadSettings,import:renderImport,ledger:renderLedger})[page]?.();
 }
 
 /* ─── helpers ─── */
@@ -1041,13 +1067,18 @@ function renderRunRows(){
       <td style="max-width:140px"><input class="ri" type="text" value="${L.deduction_notes||''}" style="font-size:11px" oninput="updR('${e.id}','deduction_notes',this.value)"></td>
       <td style="text-align:right;font-weight:600;font-size:12px" id="net-${e.id}">${net>0?aed(net):'—'}</td>
       <td><button class="btn xs" onclick="previewSlip('${e.id}')">Preview</button></td>
-    </tr>`;
+    </tr>
+    ${buildEarnRows(e.id, m, y)}`;
   }).join('');
   updateTot();
 }
 
 function calcBasic(L){const t=L.total_days||30,w=parseInt(L.worked_days)||0;return w>=t?(L.basic_salary||0):((L.basic_salary||0)/t)*w;}
-function calcNet(L){return Math.max(0,calcBasic(L)+(parseFloat(L.trip_commission)||0)+(parseFloat(L.other_commission)||0)-(parseFloat(L.advances)||0));}
+function calcNet(L){
+  const m=getM('run-month')||now.getMonth()+1, y=getY('run-year')||now.getFullYear();
+  const customTotal = L.employee_id ? totalCustomEarns(L.employee_id, m, y) : 0;
+  return Math.max(0,calcBasic(L)+(parseFloat(L.trip_commission)||0)+(parseFloat(L.other_commission)||0)+customTotal-(parseFloat(L.advances)||0));
+}
 function updR(id,field,val){
   const L=runOverrides[id];L[field]=isNaN(parseFloat(val))?val:parseFloat(val);
   const net=calcNet(L);L.net_payable=net;
@@ -1071,7 +1102,16 @@ async function savePayroll(){
   let run=DB.runs.find(r=>r.period_month===m&&r.period_year===y);
   if(run){DB.lines=DB.lines.filter(l=>l.run_id!==run.id);}
   else{run={id:uid(),period_month:m,period_year:y,created_at:new Date().toISOString()};DB.runs.push(run);}
-  const lines=Object.values(runOverrides).map(L=>({...L,id:uid(),run_id:run.id,total_fixed:calcBasic(L),total_variable:(parseFloat(L.trip_commission)||0)+(parseFloat(L.other_commission)||0),net_payable:calcNet(L)}));
+  const lines=Object.values(runOverrides).map(L=>{
+    const customTotal=totalCustomEarns(L.employee_id,m,y);
+    const customItems=getCustomEarns(L.employee_id,m,y).filter(c=>c.amount>0).map(c=>`${c.label}: AED ${c.amount}`).join(', ');
+    return {...L,id:uid(),run_id:run.id,
+      total_fixed:calcBasic(L),
+      total_variable:(parseFloat(L.trip_commission)||0)+(parseFloat(L.other_commission)||0)+customTotal,
+      custom_earnings:customTotal,
+      custom_earnings_detail:customItems,
+      net_payable:calcNet(L)};
+  });
   DB.lines.push(...lines);
   run.total_net=lines.reduce((s,l)=>s+l.net_payable,0);
   run.total_gross=lines.reduce((s,l)=>s+calcBasic(l)+l.total_variable,0);
@@ -1159,7 +1199,13 @@ function buildSlip(e,L,period){
     <div class="slip-sec">Section B — Variable earnings</div>
     <div class="sr"><span>Trip commissions</span><span>${num(trip)}</span></div>
     <div class="sr"><span>Attendance allowance</span><span>${num(other)}</span></div>
-    <div class="sr tot"><span>Total variable</span><span>${num(trip+other)}</span></div>
+    ${(()=>{
+      const pm=L.period_month||(getM&&getM('run-month'))||now.getMonth()+1;
+      const py=L.period_year||(getY&&getY('run-year'))||now.getFullYear();
+      const earns=e.id?getCustomEarns(e.id,pm,py).filter(c=>c.amount>0):[];
+      return earns.map(c=>`<div class="sr"><span>${c.label}</span><span>${num(c.amount)}</span></div>`).join('');
+    })()}
+    <div class="sr tot"><span>Total variable</span><span>${num(trip+other+(L.custom_earnings||0))}</span></div>
     ${adv>0?`<div class="slip-sec">Section C — Deductions</div>${dedLines.length?dedLines.map(d=>`<div class="sr neg"><span>${catLabel(d.category)}: ${d.description}${d.reference?' ['+d.reference+']':''}</span><span>(${num(d.amount)})</span></div>`).join(''):`<div class="sr neg"><span>${L.deduction_notes||'Advances / deductions'}</span><span>(${num(adv)})</span></div>`}<div class="sr tot neg"><span>Total deductions</span><span>(${num(adv)})</span></div>`:''}
     <div class="slip-sec">Summary</div>
     <div class="sr"><span>Total earnings (A + B)</span><span>${num(basic+trip+other)}</span></div>
@@ -2012,6 +2058,151 @@ async function doLogout(){
   toast('Signed out','','info',2000);
 }
 
+
+/* ─── EARNINGS TYPES ─── */
+function renderEarnTypes(){
+  const tb = document.getElementById('earn-types-tb');
+  if(!tb) return;
+  if(!DB.earnTypes.length){
+    tb.innerHTML='<tr><td colspan="6" class="empty" style="padding:2rem">No earnings types defined. Add one to get started.</td></tr>';
+    return;
+  }
+  tb.innerHTML = DB.earnTypes.map(et=>`<tr>
+    <td style="font-weight:500">${et.label}</td>
+    <td><span class="badge ${et.recur==='recurring'?'b-dr':'b-st'}">${et.recur==='recurring'?'Recurring':'One-off'}</span></td>
+    <td style="font-size:12px;color:var(--text-2)">${et.desc||'—'}</td>
+    <td style="font-size:12px"><span class="tag" style="background:var(--blue-bg);color:var(--blue-text)">Section B</span> ${et.label}</td>
+    <td><span class="badge ${et.active?'b-paid':'b-zero'}">${et.active?'Active':'Inactive'}</span></td>
+    <td><div style="display:flex;gap:4px">
+      <button class="btn xs" onclick="editEarnType('${et.id}')">Edit</button>
+      <button class="btn xs" onclick="toggleEarnType('${et.id}')">${et.active?'Deactivate':'Activate'}</button>
+      <button class="btn xs dan" onclick="delEarnType('${et.id}')">Del</button>
+    </div></td>
+  </tr>`).join('');
+}
+
+function openEarnTypeModal(){
+  document.getElementById('et-id').value='';
+  document.getElementById('earn-type-mt').textContent='Add earnings type';
+  document.getElementById('et-label').value='';
+  document.getElementById('et-recur').value='recurring';
+  document.getElementById('et-desc').value='';
+  document.getElementById('modal-earn-type').classList.add('open');
+}
+
+function editEarnType(id){
+  const et=DB.earnTypes.find(x=>x.id===id);if(!et)return;
+  document.getElementById('et-id').value=et.id;
+  document.getElementById('earn-type-mt').textContent='Edit earnings type';
+  document.getElementById('et-label').value=et.label;
+  document.getElementById('et-recur').value=et.recur||'recurring';
+  document.getElementById('et-desc').value=et.desc||'';
+  document.getElementById('modal-earn-type').classList.add('open');
+}
+
+function saveEarnType(){
+  const id=document.getElementById('et-id').value;
+  const label=document.getElementById('et-label').value.trim();
+  if(!label){toast('Label required','Please enter a label for this earnings type.','warn');return;}
+  const et={
+    id:id||uid(), label,
+    recur:document.getElementById('et-recur').value,
+    desc:document.getElementById('et-desc').value.trim(),
+    active:true,
+  };
+  if(id) DB.earnTypes=DB.earnTypes.map(x=>x.id===id?et:x);
+  else DB.earnTypes.push(et);
+  save(); closeM('modal-earn-type'); renderEarnTypes();
+  toast('Saved',`"${label}" earnings type saved.`,'success',2000);
+}
+
+function toggleEarnType(id){
+  const et=DB.earnTypes.find(x=>x.id===id);if(!et)return;
+  et.active=!et.active; save(); renderEarnTypes();
+}
+
+async function delEarnType(id){
+  if(!await showConfirm('Delete earnings type','This will remove the type. Existing payroll data is not affected.','Delete','btn dan','danger'))return;
+  DB.earnTypes=DB.earnTypes.filter(x=>x.id!==id);
+  DB.customEarns=DB.customEarns.filter(x=>x.earn_type_id!==id);
+  save(); renderEarnTypes();
+}
+
+// Get custom earnings for an employee in a period
+function getCustomEarns(empId, month, year){
+  // Recurring types
+  const recurring = DB.earnTypes.filter(et=>et.active&&et.recur==='recurring').map(et=>{
+    const existing = DB.customEarns.find(c=>c.emp_id===empId&&c.earn_type_id===et.id&&c.month===month&&c.year===year);
+    return {earn_type_id:et.id, label:et.label, amount:existing?existing.amount:0, recur:'recurring'};
+  });
+  // One-off custom items for this emp/period
+  const oneoff = DB.customEarns.filter(c=>c.emp_id===empId&&c.month===month&&c.year===year&&c.recur==='oneoff')
+    .map(c=>({earn_type_id:c.id, label:c.label, amount:c.amount, recur:'oneoff', _id:c.id}));
+  return [...recurring, ...oneoff];
+}
+
+// Save custom earning amount
+function saveCustomEarn(empId, earnTypeId, month, year, amount, label, recur){
+  const existing = DB.customEarns.find(c=>c.emp_id===empId&&c.earn_type_id===earnTypeId&&c.month===month&&c.year===year);
+  if(existing){ existing.amount=amount; }
+  else{ DB.customEarns.push({id:uid(),emp_id:empId,earn_type_id:earnTypeId,label,month,year,amount,recur:recur||'recurring'}); }
+  save();
+}
+
+// Total custom earnings for an employee in a period
+function totalCustomEarns(empId, month, year){
+  return getCustomEarns(empId, month, year).reduce((s,c)=>s+(parseFloat(c.amount)||0),0);
+}
+
+
+function buildEarnRows(empId, m, y){
+  const earns = getCustomEarns(empId, m, y);
+  if(!earns.length) return '';
+  return earns.map(c=>`
+    <tr style="background:var(--bg)">
+      <td style="padding:4px 12px;font-size:11px;color:var(--text-2);padding-left:24px">↳ ${c.label}</td>
+      <td colspan="4"></td>
+      <td><input class="ri" type="number" min="0" value="${c.amount||0}" style="width:90px;font-size:11px"
+        oninput="saveCustomEarn('${empId}','${c.earn_type_id}',${m},${y},parseFloat(this.value)||0,'${c.label}','${c.recur}');updCustomTotal('${empId}',${m},${y})">
+      </td>
+      <td style="font-size:11px;color:var(--text-2)">${c.recur==='recurring'?'Recurring':'One-off'}</td>
+      <td style="text-align:right;font-size:11px" id="cnet-${empId}-${c.earn_type_id}"></td>
+      <td>${c.recur==='oneoff'?`<button class="btn xs dan" onclick="removeOneoffEarn('${empId}','${c._id}',${m},${y})">✕</button>`:''}  </td>
+    </tr>`).join('');
+}
+
+function updCustomTotal(empId, m, y){
+  const total = totalCustomEarns(empId, m, y);
+  // Update the net display for this employee
+  const L = runOverrides[empId];
+  if(L){
+    L._customEarns = total;
+    const net = calcNetWithCustom(L, empId, m, y);
+    const el = document.getElementById('net-'+empId);
+    if(el) el.textContent = net>0?aed(net):'—';
+  }
+  updateTot();
+}
+
+function calcNetWithCustom(L, empId, m, y){
+  const customTotal = totalCustomEarns(empId, m||getM('run-month'), y||getY('run-year'));
+  return Math.max(0, calcBasic(L)+(parseFloat(L.trip_commission)||0)+(parseFloat(L.other_commission)||0)+customTotal-(parseFloat(L.advances)||0));
+}
+
+function removeOneoffEarn(empId, earnId, m, y){
+  DB.customEarns = DB.customEarns.filter(c=>!(c.id===earnId&&c.emp_id===empId&&c.month===m&&c.year===y));
+  save(); buildRunTable();
+}
+
+function addOneoffEarnPrompt(empId){
+  const m=getM('run-month'), y=getY('run-year');
+  const label = prompt('Enter label for this one-off earning (e.g. "Adhoc bonus"):');
+  if(!label) return;
+  const amount = parseFloat(prompt(`Amount (AED) for ${label}:`)||'0')||0;
+  DB.customEarns.push({id:uid(),emp_id:empId,earn_type_id:'oneoff-'+uid(),label,month:m,year:y,amount,recur:'oneoff'});
+  save(); buildRunTable();
+}
+
 /* ─── EMAIL SENDING ─── */
 async function sendSlipsForRun(run, lines, period){
   const withEmail=lines.filter(L=>{const e=DB.employees.find(x=>x.id===L.employee_id);return e&&e.email&&e.email.includes('@');});
@@ -2469,6 +2660,38 @@ async function delRecovery(recId,ledgerId){
 
 <!-- Toast container -->
 <div class="toast-container" id="toast-container"></div>
+
+
+<!-- Earnings type modal -->
+<div class="modal-bg" id="modal-earn-type">
+  <div class="modal" style="width:500px">
+    <div class="modal-t"><span id="earn-type-mt">Add earnings type</span><button class="btn xs" onclick="closeM('modal-earn-type')">✕</button></div>
+    <input type="hidden" id="et-id">
+    <div class="fg" style="margin-bottom:.875rem">
+      <div class="fgrp s2"><label>Label <span style="font-size:10px;color:var(--text-3)">(appears on salary slip)</span></label>
+        <input type="text" id="et-label" placeholder="e.g. Performance commission, Fuel allowance, Adhoc bonus">
+      </div>
+      <div class="fgrp"><label>Type</label>
+        <select id="et-recur">
+          <option value="recurring">Recurring — appears every month</option>
+          <option value="oneoff">One-off — add manually when needed</option>
+        </select>
+      </div>
+      <div class="fgrp"><label>Section on slip</label>
+        <select id="et-section">
+          <option value="B">Section B — Variable earnings</option>
+        </select>
+      </div>
+      <div class="fgrp s2"><label>Description <span style="font-size:10px;color:var(--text-3)">(internal note, not shown on slip)</span></label>
+        <input type="text" id="et-desc" placeholder="e.g. Monthly performance-based incentive">
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn" onclick="closeM('modal-earn-type')">Cancel</button>
+      <button class="btn pri" onclick="saveEarnType()">Save</button>
+    </div>
+  </div>
+</div>
 
 <!-- Confirm dialog -->
 <div class="confirm-bg" id="confirm-bg">
