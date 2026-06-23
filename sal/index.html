@@ -552,7 +552,8 @@ tbody td{padding:8px 12px;vertical-align:middle}
 <script>
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const now=new Date();
-let sbUrl='',sbKey='';
+let sbUrl='https://evnlqsdwozieigaeuamw.supabase.co';
+let sbKey='sb_publishable_T8M9NpplluhajrWw3bdTwA_EE60UQg4';
 let runOverrides={};
 
 const SCHEMA=`-- Run once in Supabase SQL editor
@@ -1330,7 +1331,9 @@ function delRate(id){showConfirm('Delete rate','This commission rate will be rem
 
 /* ─── SETTINGS ─── */
 function loadSettings(){
-  sbUrl=localStorage.getItem('sb_url')||'';sbKey=localStorage.getItem('sb_key')||'';
+  // Load from localStorage if user has overridden, otherwise use defaults
+sbUrl=localStorage.getItem('sb_url')||sbUrl;
+sbKey=localStorage.getItem('sb_key')||sbKey;
   document.getElementById('sb-url').value=sbUrl;document.getElementById('sb-key').value=sbKey;
   document.getElementById('co-name').value=DB.company.name;document.getElementById('co-addr').value=DB.company.addr;
   document.getElementById('co-wps').value=DB.company.wps;document.getElementById('co-vat').value=DB.company.vat;
@@ -1441,7 +1444,9 @@ function exportAllCSV(){
 function closeM(id){document.getElementById(id).classList.remove('open');}
 
 // Init
-sbUrl=localStorage.getItem('sb_url')||'';sbKey=localStorage.getItem('sb_key')||'';
+// Load from localStorage if user has overridden, otherwise use defaults
+sbUrl=localStorage.getItem('sb_url')||sbUrl;
+sbKey=localStorage.getItem('sb_key')||sbKey;
 // Check auth session on load
 setTimeout(()=>checkSession(), 200);
 // Pre-initialise all month/year selects so pages show data immediately
@@ -2059,18 +2064,10 @@ async function checkSession(){
 function showLoginScreen(msg=''){
   const ls = document.getElementById('login-screen');
   if(ls) ls.style.display='flex';
-  // Show setup panel if Supabase not configured
-  if(!sbUrl||!sbKey){
-    document.getElementById('login-setup').style.display='block';
-    document.getElementById('login-form').style.display='none';
-    // Pre-fill if partially set
-    if(sbUrl) document.getElementById('setup-url').value=sbUrl;
-    if(sbKey) document.getElementById('setup-key').value=sbKey;
-  } else {
-    document.getElementById('login-setup').style.display='none';
-    document.getElementById('login-form').style.display='block';
-    if(msg) document.getElementById('login-err').textContent=msg;
-  }
+  // Setup panel only shown if credentials somehow missing (shouldn't happen with hardcoded defaults)
+  document.getElementById('login-setup').style.display='none';
+  document.getElementById('login-form').style.display='block';
+  if(msg) document.getElementById('login-err').textContent=msg;
 }
 
 function hideLoginScreen(){
