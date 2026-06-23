@@ -1319,7 +1319,29 @@ function renderEmps(){
 function openEmpModal(){clearEmpF();document.getElementById('emp-mt').textContent='Add employee';document.getElementById('modal-emp').classList.add('open');}
 function clearEmpF(){['emp-id','emp-name','emp-desig','emp-wp','emp-lc','emp-iban','emp-email'].forEach(id=>document.getElementById(id).value='');document.getElementById('emp-basic').value='0';document.getElementById('emp-sheet').value='Driver';}
 function editEmp(id){const e=DB.employees.find(x=>x.id===id);if(!e)return;document.getElementById('emp-id').value=e.id;document.getElementById('emp-name').value=e.name;document.getElementById('emp-sheet').value=e.sheet;document.getElementById('emp-desig').value=e.designation||'';document.getElementById('emp-wp').value=e.work_permit||'';document.getElementById('emp-lc').value=e.labor_card||'';document.getElementById('emp-iban').value=e.iban||'';document.getElementById('emp-basic').value=e.basic_salary||0;document.getElementById('emp-email').value=e.email||'';document.getElementById('emp-mt').textContent='Edit employee';document.getElementById('modal-emp').classList.add('open');}
-function saveEmp(){const id=document.getElementById('emp-id').value;const e={id:id||uid(),name:document.getElementById('emp-name').value,sheet:document.getElementById('emp-sheet').value,designation:document.getElementById('emp-desig').value,work_permit:document.getElementById('emp-wp').value,labor_card:document.getElementById('emp-lc').value,iban:document.getElementById('emp-iban').value,basic_salary:parseFloat(document.getElementById('emp-basic').value)||0,email:document.getElementById('emp-email').value};if(id)DB.employees=DB.employees.map(x=>x.id===id?e:x);else DB.employees.push(e);save();closeM('modal-emp');renderEmps();}
+function saveEmp(){
+  const id=document.getElementById('emp-id').value;
+  const e={id:id||uid(),name:document.getElementById('emp-name').value,sheet:document.getElementById('emp-sheet').value,designation:document.getElementById('emp-desig').value,work_permit:document.getElementById('emp-wp').value,labor_card:document.getElementById('emp-lc').value,iban:document.getElementById('emp-iban').value,basic_salary:parseFloat(document.getElementById('emp-basic').value)||0,email:document.getElementById('emp-email').value||''};
+  if(id) DB.employees=DB.employees.map(x=>x.id===id?e:x);
+  else DB.employees.push(e);
+  save();
+  // Immediately push to Supabase so email persists across devices
+  if(sbUrl&&sbKey){
+    let authToken=sbKey;
+    if(supabaseClient){supabaseClient.auth.getSession().then(({data:{session}})=>{
+      if(session?.access_token) authToken=session.access_token;
+      fetch(`${sbUrl}/rest/v1/employees`,{method:'POST',
+        headers:{apikey:sbKey,Authorization:'Bearer '+authToken,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+        body:JSON.stringify({id:e.id,name:e.name,sheet:e.sheet,designation:e.designation||'',
+          work_permit:e.work_permit||'',labor_card:e.labor_card||'',iban:e.iban||'',
+          basic_salary:e.basic_salary||0,email:e.email})
+      }).then(r=>r.ok?toast('Saved',e.name+' updated.','success',2000):console.error('Employee push failed',r.status));
+    });}
+  } else {
+    toast('Saved',e.name+' updated.','success',2000);
+  }
+  closeM('modal-emp');renderEmps();
+}
 function delEmp(id){showConfirm('Delete employee','This employee will be removed from the system.','Delete','btn dan','danger').then(ok=>{if(ok){DB.employees=DB.employees.filter(e=>e.id!==id);save();renderEmps();}});}
 
 /* ─── RATES ─── */
@@ -1920,16 +1942,26 @@ async function syncFromSupabase(){
       DB.employees = sbEmps.map(se=>{
         const local = DB.employees.find(le=>le.id===se.id||le.name===se.name);
         return {
-          id:se.id, name:se.name, sheet:se.sheet||'Driver',
+          id:se.id, name:se.name, sheet:se.sheet||local?.sheet||'Driver',
           designation:se.designation||local?.designation||'',
           work_permit:se.work_permit||local?.work_permit||'',
           labor_card:se.labor_card||local?.labor_card||'',
           iban:se.iban||local?.iban||'',
           basic_salary:parseFloat(se.basic_salary)||local?.basic_salary||0,
-          // Prefer local email if Supabase doesn't have it
+          // Always prefer whichever has email — local wins if Supabase is empty
           email:se.email||local?.email||'',
         };
       });
+      // Push any locally-stored emails back to Supabase if Supabase is missing them
+      const missingEmails = DB.employees.filter(e=>e.email&&sbEmps.find(se=>se.id===e.id&&!se.email));
+      if(missingEmails.length&&sbUrl&&sbKey){
+        const h2={apikey:sbKey,Authorization:'Bearer '+authToken,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
+        missingEmails.forEach(e=>fetch(`${sbUrl}/rest/v1/employees`,{method:'POST',headers:h2,
+          body:JSON.stringify({id:e.id,name:e.name,sheet:e.sheet,designation:e.designation||'',
+            work_permit:e.work_permit||'',labor_card:e.labor_card||'',iban:e.iban||'',
+            basic_salary:e.basic_salary||0,email:e.email})}).catch(()=>{}));
+        console.log(`Auto-pushed ${missingEmails.length} employee emails to Supabase`);
+      }
     }
 
     // Payroll runs: merge — keep local runs not yet in Supabase
