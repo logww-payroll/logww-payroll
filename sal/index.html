@@ -1036,6 +1036,16 @@ function updateTot(){const t=Object.values(runOverrides).reduce((s,L)=>s+calcNet
 
 async function savePayroll(){
   const m=getM('run-month'),y=getY('run-year');
+  // Guard: if runOverrides is empty, rebuild the table first
+  if(!Object.keys(runOverrides).length){
+    buildRunTable();
+    // Small wait for DOM to settle
+    await new Promise(r=>setTimeout(r,100));
+  }
+  if(!Object.keys(runOverrides).length){
+    toast('Nothing to save','Please go to Run Payroll and load the table first.','warn');
+    return;
+  }
   let run=DB.runs.find(r=>r.period_month===m&&r.period_year===y);
   if(run){DB.lines=DB.lines.filter(l=>l.run_id!==run.id);}
   else{run={id:uid(),period_month:m,period_year:y,created_at:new Date().toISOString()};DB.runs.push(run);}
