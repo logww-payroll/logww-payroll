@@ -1171,16 +1171,10 @@ async function savePayroll(){
   });
 
   if(withEmail.length){
-    showConfirm(
-      'Payroll saved — send slips?',
-      `${run.employee_count} employees · ${aed(run.total_net)} net payable.\n${withEmail.length} employee${withEmail.length>1?'s have':' has'} an email on file. Send salary slips now?`,
-      'Send now','btn pri','success'
-    ).then(async doSend=>{
-      if(doSend) await sendSlipsForRun(run, lines, period);
-      else toast('Payroll saved',`${run.employee_count} employees · ${aed(run.total_net)} net. Send slips from History anytime.`,'success',6000);
-    });
+    toast('Payroll saved',`${run.employee_count} employees · ${aed(run.total_net)} net payable.`,'success',3000);
+    setTimeout(()=>openSendSlipsModal(run, lines, period), 500);
   } else {
-    toast('Payroll saved',summary.replace('Payroll for ','').replace(' saved.','')+' — Add emails in Employees to enable slip sending.','success',6000);
+    toast('Payroll saved',`${run.employee_count} employees · ${aed(run.total_net)} net payable. Add emails in Employees tab to send slips.`,'success',6000);
   }
 }
 
@@ -2480,6 +2474,85 @@ async function pushAllToSupabase(){
   if(btn){btn.disabled=false;btn.textContent='Push all local data to Supabase';}
 }
 
+
+/* ─── SEND SLIPS SELECTOR ─── */
+let _sendRun = null;
+let _sendLines = [];
+let _sendPeriod = '';
+
+function openSendSlipsModal(run, lines, period){
+  _sendRun = run;
+  _sendLines = lines;
+  _sendPeriod = period;
+
+  document.getElementById('send-slips-period').textContent = 'Salary slips for ' + period;
+
+  // Build list of employees with emails
+  const withEmail = lines.filter(L=>{
+    const e = DB.employees.find(x=>x.id===L.employee_id);
+    return e && e.email && e.email.includes('@');
+  });
+  const noEmail = lines.filter(L=>{
+    const e = DB.employees.find(x=>x.id===L.employee_id);
+    return !e || !e.email || !e.email.includes('@');
+  });
+
+  document.getElementById('send-slips-count').textContent =
+    withEmail.length + ' employee' + (withEmail.length!==1?'s':'') + ' with email · ' +
+    noEmail.length + ' without';
+
+  // Show warning if some have no email
+  if(noEmail.length){
+    document.getElementById('send-slips-warn').style.display='flex';
+    document.getElementById('send-slips-warn-msg').textContent =
+      noEmail.map(L=>L.employee_name).join(', ') + ' — no email on file. Go to Employees to add.';
+  } else {
+    document.getElementById('send-slips-warn').style.display='none';
+  }
+
+  // Build checkboxes
+  document.getElementById('send-slips-list').innerHTML = withEmail.length
+    ? withEmail.map(L=>{
+        const e = DB.employees.find(x=>x.id===L.employee_id)||{};
+        const net = parseFloat(L.net_payable)||0;
+        return `<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);cursor:pointer">
+          <input type="checkbox" class="slip-chk" data-id="${L.employee_id}" checked onchange="updateSendCount()" style="width:15px;height:15px;cursor:pointer">
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:500">${L.employee_name}</div>
+            <div style="font-size:11px;color:var(--text-2)">${e.email||''}</div>
+          </div>
+          <div style="font-size:12px;font-weight:600;color:var(--green-text)">${aed(net)}</div>
+        </label>`;
+      }).join('')
+    : '<div class="empty" style="padding:1.5rem">No employees have email addresses on file.<br>Go to <strong>Employees</strong> to add emails.</div>';
+
+  updateSendCount();
+  document.getElementById('modal-send-slips').classList.add('open');
+}
+
+function toggleAllSlips(checked){
+  document.querySelectorAll('.slip-chk').forEach(cb=>cb.checked=checked);
+  updateSendCount();
+}
+
+function updateSendCount(){
+  const selected = document.querySelectorAll('.slip-chk:checked').length;
+  const btn = document.getElementById('send-slips-btn');
+  if(btn) btn.textContent = selected
+    ? 'Send ' + selected + ' slip' + (selected!==1?'s':'')
+    : 'No slips selected';
+  if(btn) btn.disabled = selected===0;
+}
+
+async function confirmSendSlips(){
+  const selected = [...document.querySelectorAll('.slip-chk:checked')].map(cb=>cb.dataset.id);
+  if(!selected.length){ toast('Nothing selected','Select at least one employee.','warn'); return; }
+
+  const toSend = _sendLines.filter(L=>selected.includes(L.employee_id));
+  closeM('modal-send-slips');
+  await sendSlipsForRun(_sendRun, toSend, _sendPeriod);
+}
+
 /* ─── EMAIL SENDING ─── */
 async function sendSlipsForRun(run, lines, period){
   const withEmail=lines.filter(L=>{const e=DB.employees.find(x=>x.id===L.employee_id);return e&&e.email&&e.email.includes('@');});
@@ -2511,14 +2584,13 @@ async function sendSlipsForRun(run, lines, period){
   toast(sent+' salary slip'+(sent!==1?'s':'')+' sent',failed>0?failed+' failed — check browser console':'All delivered successfully.',failed>0?'warn':'success',5000);
 }
 
-async function sendRunSlips(runId){
+function sendRunSlips(runId){
   const run=DB.runs.find(r=>r.id===runId);if(!run)return;
   const lines=DB.lines.filter(l=>l.run_id===runId);
   const period=MONTHS[run.period_month-1]+' '+run.period_year;
   const withEmail=lines.filter(L=>{const e=DB.employees.find(x=>x.id===L.employee_id);return e&&e.email&&e.email.includes('@');});
   if(!withEmail.length){toast('No emails on file','Add email addresses in the Employees tab first.','warn');return;}
-  if(!await showConfirm('Send salary slips','Send '+period+' slips to '+withEmail.length+' employee'+(withEmail.length>1?'s':'')+'?','Send now','btn pri','info'))return;
-  await sendSlipsForRun(run,lines,period);
+  openSendSlipsModal(run, lines, period);
 }
 
 function buildEmailHtml(e,L,period){
@@ -2988,6 +3060,34 @@ async function delRecovery(recId,ledgerId){
     <div class="modal-ft">
       <button class="btn" onclick="closeM('modal-earn-type')">Cancel</button>
       <button class="btn pri" onclick="saveEarnType()">Save</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Send slips modal -->
+<div class="modal-bg" id="modal-send-slips">
+  <div class="modal" style="width:520px">
+    <div class="modal-t">Send salary slips<button class="btn xs" onclick="closeM('modal-send-slips')">✕</button></div>
+    <div id="send-slips-period" style="font-size:13px;color:var(--text-2);margin-bottom:1rem"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+      <span style="font-size:12px;color:var(--text-2)" id="send-slips-count"></span>
+      <div style="display:flex;gap:8px">
+        <button class="btn xs" onclick="toggleAllSlips(true)">Select all</button>
+        <button class="btn xs" onclick="toggleAllSlips(false)">Deselect all</button>
+      </div>
+    </div>
+    <div id="send-slips-list" style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto;margin-bottom:1rem"></div>
+    <div class="notice warn" id="send-slips-warn" style="display:none;margin-bottom:.75rem">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span id="send-slips-warn-msg" style="font-size:12px"></span>
+    </div>
+    <div class="modal-ft">
+      <button class="btn" onclick="closeM('modal-send-slips')">Cancel</button>
+      <button class="btn pri" id="send-slips-btn" onclick="confirmSendSlips()">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Send slips
+      </button>
     </div>
   </div>
 </div>
