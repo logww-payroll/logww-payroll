@@ -2203,6 +2203,104 @@ function addOneoffEarnPrompt(empId){
   save(); buildRunTable();
 }
 
+
+/* ─── LEDGER ATTACHMENTS ─── */
+let _ledgerAttachments = []; // array of {name, size, type, data}
+
+function handleLedgerDrop(e){
+  e.preventDefault();
+  document.getElementById('lm-attach-zone').style.borderColor='var(--border-strong)';
+  handleLedgerFiles(e.dataTransfer.files);
+}
+
+function handleLedgerFiles(files){
+  Array.from(files).forEach(file=>{
+    if(file.size > 4*1024*1024){ toast('File too large',`${file.name} exceeds 4 MB limit.`,'warn'); return; }
+    const reader = new FileReader();
+    reader.onload = function(e){
+      _ledgerAttachments.push({name:file.name, size:file.size, type:file.type, data:e.target.result});
+      renderLedgerAttachList();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderLedgerAttachList(){
+  const list = document.getElementById('lm-attach-list');
+  if(!list) return;
+  if(!_ledgerAttachments.length){ list.innerHTML=''; return; }
+  list.innerHTML = _ledgerAttachments.map((a,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r)">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" style="color:var(--blue-text);flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.name}</div>
+        <div style="font-size:10px;color:var(--text-3)">${formatFileSize(a.size)}</div>
+      </div>
+      <button class="btn xs" onclick="previewLedgerAttach(${i})">View</button>
+      <button class="btn xs dan" onclick="removeLedgerAttach(${i})">✕</button>
+    </div>`).join('');
+}
+
+function previewLedgerAttach(idx){
+  const a = _ledgerAttachments[idx]; if(!a) return;
+  viewAttachmentData(a);
+}
+
+function removeLedgerAttach(idx){
+  _ledgerAttachments.splice(idx,1);
+  renderLedgerAttachList();
+}
+
+function viewAttachmentData(a){
+  if(!a||!a.data) return;
+  if(a.type&&a.type.startsWith('image/')){
+    const win=window.open();
+    win.document.write(`<html><body style="margin:0;background:#111;display:flex;align-items:center;justify-content:center;min-height:100vh"><img src="${a.data}" style="max-width:100%;max-height:100vh;object-fit:contain"></body></html>`);
+  } else if(a.type==='application/pdf'||a.name.endsWith('.pdf')){
+    const win=window.open();
+    win.document.write(`<html><body style="margin:0"><embed src="${a.data}" type="application/pdf" width="100%" height="100%"></body></html>`);
+  } else {
+    const link=document.createElement('a'); link.href=a.data; link.download=a.name; link.click();
+  }
+}
+
+function clearLedgerAttachments(){
+  _ledgerAttachments=[];
+  renderLedgerAttachList();
+  const zone=document.getElementById('lm-attach-zone');
+  if(zone) zone.style.borderColor='var(--border-strong)';
+}
+
+// View attachments for a saved ledger entry
+function viewLedgerAttachments(ledgerId){
+  const l=DB.ledger.find(x=>x.id===ledgerId);
+  if(!l||!l.attachments||!l.attachments.length){
+    toast('No attachments','No files attached to this entry.','info');
+    return;
+  }
+  // Show a small modal listing all attachments
+  const box=document.createElement('div');
+  box.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:1.5rem;width:400px;z-index:300;box-shadow:0 8px 40px rgba(0,0,0,.15)';
+  box.innerHTML=`
+    <div style="font-weight:600;margin-bottom:1rem;display:flex;justify-content:space-between">
+      Attachments (${l.attachments.length})<button onclick="this.closest('div[style]').remove()" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--text-3)">✕</button>
+    </div>
+    ${l.attachments.map((a,i)=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:8px;background:var(--bg);border-radius:var(--r);margin-bottom:6px">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" style="color:var(--blue-text)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <div style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.name}</div>
+        <span style="font-size:10px;color:var(--text-3)">${formatFileSize(a.size)}</span>
+        <button class="btn xs" onclick="viewAttachmentData(DB.ledger.find(x=>x.id==='${ledgerId}').attachments[${i}])">View</button>
+      </div>`).join('')}`;
+  document.body.appendChild(box);
+  // Click outside to close
+  setTimeout(()=>{
+    document.addEventListener('click', function handler(e){
+      if(!box.contains(e.target)){box.remove();document.removeEventListener('click',handler);}
+    });
+  },100);
+}
+
 /* ─── EMAIL SENDING ─── */
 async function sendSlipsForRun(run, lines, period){
   const withEmail=lines.filter(L=>{const e=DB.employees.find(x=>x.id===L.employee_id);return e&&e.email&&e.email.includes('@');});
@@ -2358,6 +2456,10 @@ function renderLedger(){
           <td>
             <div style="display:flex;gap:4px">
               ${!isCleared?`<button class="btn xs" onclick="openRecoveryModal('${l.id}')">Recover</button>`:''}
+              <button class="btn xs" onclick="viewLedgerAttachments('${l.id}')" title="${l.attachments&&l.attachments.length?l.attachments.length+' file(s)':'No attachments'}" style="${l.attachments&&l.attachments.length?'color:var(--blue-text)':'color:var(--text-3)'}">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                ${l.attachments&&l.attachments.length?l.attachments.length:''}
+              </button>
               <button class="btn xs" onclick="toggleRecHist('${l.id}')">History</button>
               <button class="btn xs" onclick="editLedger('${l.id}')">Edit</button>
               <button class="btn xs dan" onclick="delLedger('${l.id}')">Del</button>
@@ -2423,6 +2525,7 @@ function updateLedgerEmiPreview(){
 }
 
 function openLedgerModal(){
+  clearLedgerAttachments();
   document.getElementById('lm-id').value='';document.getElementById('ledger-mt').textContent='Add payable';
   document.getElementById('lm-emp').innerHTML=DB.employees.map(e=>'<option value="'+e.id+'">'+e.name+'</option>').join('');
   document.getElementById('lm-date').value=now.toISOString().slice(0,10);
@@ -2445,6 +2548,9 @@ function editLedger(id){
   document.getElementById('lm-emi').value=l.emi||0;
   document.getElementById('lm-start-month').value=l.start_month||now.getMonth()+1;
   document.getElementById('lm-start-year').value=l.start_year||now.getFullYear();
+  // Restore attachments
+  _ledgerAttachments = l.attachments ? [...l.attachments] : [];
+  renderLedgerAttachList();
 }
 
 function saveLedgerEntry(){
@@ -2462,6 +2568,7 @@ function saveLedgerEntry(){
       emi:parseFloat(document.getElementById('lm-emi').value)||0,
       start_month:parseInt(document.getElementById('lm-start-month').value),
       start_year:parseInt(document.getElementById('lm-start-year').value),
+      attachments:[..._ledgerAttachments],
       status:Math.max(0,origAmt-recTotal)<=0?'cleared':'active'});
   } else {
     DB.ledger.push({id:uid(),employee_id:empId,employee_name:emp?.name||'',
@@ -2470,6 +2577,7 @@ function saveLedgerEntry(){
       original_amount:origAmt,balance:origAmt,emi:parseFloat(document.getElementById('lm-emi').value)||0,
       start_month:parseInt(document.getElementById('lm-start-month').value),
       start_year:parseInt(document.getElementById('lm-start-year').value),
+      attachments:[..._ledgerAttachments],
       status:'active',created_at:new Date().toISOString()});
   }
   save();closeM('modal-ledger');renderLedger();
@@ -2586,10 +2694,22 @@ async function delRecovery(recId,ledgerId){
         <div><div style="font-size:10px;color:var(--text-2)">Cleared in approx.</div><div id="lm-ep-months" style="font-weight:600"></div></div>
       </div>
     </div>
-    <div class="notice warn" style="margin-bottom:0">
+    <div class="notice warn" style="margin-bottom:.875rem">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       <span style="font-size:12px">The monthly EMI is auto-deducted from this employee's salary each payroll run until the balance reaches zero. You can override the amount any month from the ledger.</span>
     </div>
+    <div class="sdiv">Attachments <span style="font-size:10px;font-weight:400;color:var(--text-3)">Loan agreement, fine notice, receipt, or any supporting document</span></div>
+    <div id="lm-attach-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:.75rem"></div>
+    <div style="border:2px dashed var(--border-strong);border-radius:var(--r);padding:1rem;text-align:center;cursor:pointer;transition:border-color .15s" id="lm-attach-zone"
+      onclick="document.getElementById('lm-file').click()"
+      ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+      ondragleave="this.style.borderColor='var(--border-strong)'"
+      ondrop="handleLedgerDrop(event)">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="color:var(--text-3);margin-bottom:4px"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+      <div style="font-size:12px;color:var(--text-2)">Click or drag to attach files</div>
+      <div style="font-size:10px;color:var(--text-3);margin-top:2px">PDF, image, Word, Excel — max 4 MB each · multiple files allowed</div>
+    </div>
+    <input type="file" id="lm-file" style="display:none" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" onchange="handleLedgerFiles(this.files)">
     <div class="modal-ft">
       <button class="btn" onclick="closeM('modal-ledger')">Cancel</button>
       <button class="btn pri" onclick="saveLedgerEntry()">Save payable</button>
