@@ -314,7 +314,9 @@ tbody td{padding:8px 12px;vertical-align:middle}
     <div class="btn-row">
       <button class="btn pri" onclick="testSB()">Test connection</button>
       <button class="btn" onclick="toggleSchema()">Show SQL</button>
+      <button class="btn" id="push-all-btn" onclick="pushAllToSupabase()">Push all local data to Supabase</button>
     </div>
+    <div style="font-size:11px;color:var(--text-3);margin-top:6px">Use "Push all" once after setting up on a new device to seed Supabase with data from this browser.</div>
     <div id="sb-st" style="margin-top:.875rem;font-size:13px"></div>
     <div id="sb-schema" style="display:none"><div class="schema-block" id="schema-sql"></div><button class="btn sm" style="margin-top:8px" onclick="copySchema()">Copy SQL</button></div>
   </div>
@@ -2358,6 +2360,75 @@ function viewLedgerAttachments(ledgerId){
       if(!box.contains(e.target)){box.remove();document.removeEventListener('click',handler);}
     });
   },100);
+}
+
+
+/* ─── PUSH ALL LOCAL DATA TO SUPABASE ─── */
+async function pushAllToSupabase(){
+  if(!sbUrl||!sbKey){ toast('Not connected','Enter Supabase credentials in Settings first.','warn'); return; }
+  let authToken=sbKey;
+  if(supabaseClient){try{const {data:{session}}=await supabaseClient.auth.getSession();if(session?.access_token)authToken=session.access_token;}catch(e){}}
+  const h={apikey:sbKey,Authorization:'Bearer '+authToken,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
+  const post=(table,body)=>fetch(`${sbUrl}/rest/v1/${table}`,{method:'POST',headers:h,body:JSON.stringify(body)});
+
+  let pushed=0, errors=0;
+  const btn=document.getElementById('push-all-btn');
+  if(btn){btn.disabled=true;btn.textContent='Pushing...';}
+
+  try{
+    // Push employees
+    for(const e of DB.employees){
+      const r=await post('employees',{id:e.id,name:e.name,sheet:e.sheet,designation:e.designation||'',
+        work_permit:e.work_permit||'',labor_card:e.labor_card||'',iban:e.iban||'',
+        basic_salary:e.basic_salary||0,email:e.email||''});
+      r.ok?pushed++:errors++;
+    }
+    // Push commission rates
+    for(const r of DB.rates){
+      const res=await post('commission_rates',{id:r.id,customer:r.customer||'',route:r.route,rate:r.rate});
+      res.ok?pushed++:errors++;
+    }
+    // Push all payroll runs and lines
+    for(const run of DB.runs){
+      await post('payroll_runs',{id:run.id,period_month:run.period_month,period_year:run.period_year,
+        total_net:run.total_net||0,total_gross:run.total_gross||0,
+        employee_count:run.employee_count||0,created_at:run.created_at||new Date().toISOString()});
+      const lines=DB.lines.filter(l=>l.run_id===run.id);
+      for(const L of lines){
+        await post('payroll_lines',{id:L.id,run_id:L.run_id,employee_id:L.employee_id,
+          employee_name:L.employee_name,worked_days:L.worked_days||0,total_days:L.total_days||30,
+          basic_salary:L.basic_salary||0,trip_commission:L.trip_commission||0,
+          other_commission:L.other_commission||0,advances:L.advances||0,
+          deduction_notes:L.deduction_notes||'',total_fixed:L.total_fixed||0,
+          total_variable:L.total_variable||0,net_payable:L.net_payable||0});
+        pushed++;
+      }
+    }
+    // Push all trips
+    for(const t of DB.trips){
+      const r=await post('trip_log',{id:t.id,period_month:t.period_month,period_year:t.period_year,
+        employee_id:t.employee_id,employee_name:t.employee_name,trip_date:t.trip_date||null,
+        truck:t.truck||'',route:t.route||'',customer:t.customer||'',
+        trip_comm:t.trip_comm||0,border_exp:t.border_exp||0,diesel_exp:t.diesel_exp||0,
+        other_exp:t.other_exp||0,total:t.total||0,from_loc:t.from_loc||'',
+        to_loc:t.to_loc||'',notes:t.notes||''});
+      r.ok?pushed++:errors++;
+    }
+    // Push all deductions
+    for(const d of DB.deds){
+      const r=await post('deductions',{id:d.id,period_month:d.period_month,period_year:d.period_year,
+        employee_id:d.employee_id,employee_name:d.employee_name,ded_date:d.ded_date||null,
+        category:d.category||'other',description:d.description||'',
+        reference:d.reference||'',amount:d.amount||0,traffic_points:d.traffic_points||0});
+      r.ok?pushed++:errors++;
+    }
+
+    toast('Sync complete',`${pushed} records pushed to Supabase.${errors?' '+errors+' errors — check console.':''}`,errors?'warn':'success',5000);
+  }catch(e){
+    toast('Push failed',e.message,'error');
+    console.error('Push all error:',e);
+  }
+  if(btn){btn.disabled=false;btn.textContent='Push all local data to Supabase';}
 }
 
 /* ─── EMAIL SENDING ─── */
