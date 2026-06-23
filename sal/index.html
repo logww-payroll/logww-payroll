@@ -1012,7 +1012,7 @@ function buildRunTable(){
     };
   });
   document.getElementById('run-tw').innerHTML=`<table>
-    <thead><tr><th style="min-width:160px">Employee</th><th>Days</th><th>Basic (auto)</th><th>Trip comm<br><span style="font-weight:400;font-size:10px">from trip log</span></th><th>Other comm</th><th>Deductions<br><span style="font-weight:400;font-size:10px">from deductions</span></th><th>Notes</th><th style="text-align:right">Net payable</th><th></th></tr></thead>
+    <thead><tr><th style="min-width:160px">Employee</th><th>Days</th><th>Basic (auto)</th><th>Trip comm<br><span style="font-weight:400;font-size:10px">from trip log</span></th><th>Attendance allowance</th><th>Deductions<br><span style="font-weight:400;font-size:10px">from deductions</span></th><th>Notes</th><th style="text-align:right">Net payable</th><th></th></tr></thead>
     <tbody id="run-tb"></tbody>
     <tfoot><tr style="background:var(--bg)"><td colspan="7" style="padding:9px 12px;font-weight:600;font-size:12px;color:var(--text-2)">Total</td><td style="padding:9px 12px;text-align:right;font-weight:600" id="run-tot">—</td><td></td></tr></tfoot>
   </table>`;
@@ -1033,7 +1033,7 @@ function renderRunRows(){
         <input class="ri" type="number" min="0" value="${L.trip_commission||0}" style="width:90px;${hasAutoTrip?'border-color:var(--green-bd);background:#F8FFF8':''}" oninput="updR('${e.id}','trip_commission',this.value)">
         ${hasAutoTrip?`<div style="font-size:10px;color:var(--green-text);margin-top:2px">auto from trips</div>`:''}
       </td>
-      <td><input class="ri" type="number" min="0" value="${L.other_commission||0}" style="width:80px" oninput="updR('${e.id}','other_commission',this.value)"></td>
+      <td><input class="ri" type="number" min="0" value="${L.other_commission||0}" style="width:80px" title="Attendance allowance" oninput="updR('${e.id}','other_commission',this.value)"></td>
       <td>
         <input class="ri" type="number" min="0" value="${L.advances||0}" style="width:80px;${hasAutoDed?'border-color:var(--red-bd);background:#FFF8F8':''}" oninput="updR('${e.id}','advances',this.value)">
         ${hasAutoDed?`<div style="font-size:10px;color:var(--red-text);margin-top:2px">auto from deds</div>`:''}
@@ -1158,7 +1158,7 @@ function buildSlip(e,L,period){
     <div class="sr tot"><span>Total fixed</span><span>${num(basic)}</span></div>
     <div class="slip-sec">Section B — Variable earnings</div>
     <div class="sr"><span>Trip commissions</span><span>${num(trip)}</span></div>
-    <div class="sr"><span>Other commissions</span><span>${num(other)}</span></div>
+    <div class="sr"><span>Attendance allowance</span><span>${num(other)}</span></div>
     <div class="sr tot"><span>Total variable</span><span>${num(trip+other)}</span></div>
     ${adv>0?`<div class="slip-sec">Section C — Deductions</div>${dedLines.length?dedLines.map(d=>`<div class="sr neg"><span>${catLabel(d.category)}: ${d.description}${d.reference?' ['+d.reference+']':''}</span><span>(${num(d.amount)})</span></div>`).join(''):`<div class="sr neg"><span>${L.deduction_notes||'Advances / deductions'}</span><span>(${num(adv)})</span></div>`}<div class="sr tot neg"><span>Total deductions</span><span>(${num(adv)})</span></div>`:''}
     <div class="slip-sec">Summary</div>
@@ -1172,7 +1172,7 @@ function buildSlip(e,L,period){
       ${tripLines.length?`<div style="font-size:10px;font-weight:600;color:var(--text-2);margin:5px 0 3px">Trips</div>${tripLines.map(t=>`<div class="slip-memo-r"><span>${t.trip_date} · ${t.route}${t.truck?' · '+t.truck:''}${t.from_loc?' · '+t.from_loc+' → '+t.to_loc:''}</span><span>${num(t.trip_comm)}</span></div>`).join('')}`
         :(trip?`<div class="slip-memo-r"><span>Trip commissions</span><span>${num(trip)}</span></div>`:'')
       }
-      ${other?`<div class="slip-memo-r"><span>Other commissions</span><span>${num(other)}</span></div>`:''}
+      ${other?`<div class="slip-memo-r"><span>Attendance allowance</span><span>${num(other)}</span></div>`:''}
       ${dedLines.length?`<div style="font-size:10px;font-weight:600;color:var(--text-2);margin:5px 0 3px">Deductions</div>${dedLines.map(d=>`<div class="slip-memo-r neg"><span><span class="tag ${catClass(d.category)}" style="margin-right:4px">${catLabel(d.category)}</span>${d.ded_date?' '+d.ded_date+' ·':''} ${d.description}${d.reference?' ['+d.reference+']':''}${d.traffic_points>0?' ('+d.traffic_points+' pts)':''}</span><span>(${num(d.amount)})</span></div>`).join('')}`
         :(adv?`<div class="slip-memo-r neg"><span>${L.deduction_notes||'Deductions'}</span><span>(${num(adv)})</span></div>`:'')
       }
@@ -1322,7 +1322,7 @@ function dl(csv,name){const a=document.createElement('a');a.href='data:text/csv;
 
 function exportCSV(){
   const m=getM('run-month'),y=getY('run-year');
-  const rows=[['Employee','Type','Work Permit','IBAN','Days Worked','Total Days','Basic','Trip Comm','Other Comm','Deductions','Ded Notes','Net Payable']];
+  const rows=[['Employee','Type','Work Permit','IBAN','Days Worked','Total Days','Basic','Trip Comm','Attendance Allowance','Deductions','Ded Notes','Net Payable']];
   DB.employees.forEach(e=>{const L=runOverrides[e.id]||{};rows.push([e.name,e.sheet,e.work_permit,e.iban,L.worked_days||0,L.total_days||30,calcBasic(L).toFixed(2),L.trip_commission||0,L.other_commission||0,L.advances||0,L.deduction_notes||'',calcNet(L).toFixed(2)]);});
   dl(toCSV(rows),`payroll_${MONTHS[m-1]}_${y}.csv`);
 }
@@ -2088,7 +2088,7 @@ function buildEmailHtml(e,L,period){
   +'<tr style="font-weight:700;border-top:1px solid #eee"><td style="padding:5px 6px">Total Fixed</td><td style="text-align:right;padding:5px 6px">AED '+num(basic)+'</td></tr>'
   +'<tr style="background:#f9f9f9"><td colspan="2" style="padding:5px 6px;font-weight:700;font-size:10px;text-transform:uppercase">Section B — Variable Earnings</td></tr>'
   +'<tr><td style="padding:4px 6px;color:#555">Trip Commissions</td><td style="text-align:right;padding:4px 6px">AED '+num(trip)+'</td></tr>'
-  +(other?'<tr><td style="padding:4px 6px;color:#555">Other Commissions</td><td style="text-align:right;padding:4px 6px">AED '+num(other)+'</td></tr>':'')
+  +(other?'<tr><td style="padding:4px 6px;color:#555">Attendance Allowance</td><td style="text-align:right;padding:4px 6px">AED '+num(other)+'</td></tr>':'')
   +'<tr style="font-weight:700;border-top:1px solid #eee"><td style="padding:5px 6px">Total Variable</td><td style="text-align:right;padding:5px 6px">AED '+num(trip+other)+'</td></tr>'
   +(adv>0?'<tr style="background:#f9f9f9"><td colspan="2" style="padding:5px 6px;font-weight:700;font-size:10px;text-transform:uppercase">Section C — Deductions</td></tr>'
     +dedLines.map(d=>'<tr><td style="padding:4px 6px;color:#c00">'+d.category+': '+d.description+'</td><td style="text-align:right;padding:4px 6px;color:#c00">(AED '+num(d.amount)+')</td></tr>').join('')
