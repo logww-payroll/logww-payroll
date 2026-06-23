@@ -1932,12 +1932,40 @@ async function checkSession(){
 function showLoginScreen(msg=''){
   const ls = document.getElementById('login-screen');
   if(ls) ls.style.display='flex';
-  if(msg) document.getElementById('login-err').textContent=msg;
+  // Show setup panel if Supabase not configured
+  if(!sbUrl||!sbKey){
+    document.getElementById('login-setup').style.display='block';
+    document.getElementById('login-form').style.display='none';
+    // Pre-fill if partially set
+    if(sbUrl) document.getElementById('setup-url').value=sbUrl;
+    if(sbKey) document.getElementById('setup-key').value=sbKey;
+  } else {
+    document.getElementById('login-setup').style.display='none';
+    document.getElementById('login-form').style.display='block';
+    if(msg) document.getElementById('login-err').textContent=msg;
+  }
 }
 
 function hideLoginScreen(){
   const ls = document.getElementById('login-screen');
   if(ls) ls.style.display='none';
+}
+
+function saveSetupAndContinue(){
+  const url = document.getElementById('setup-url').value.trim();
+  const key = document.getElementById('setup-key').value.trim();
+  if(!url||!key){document.getElementById('setup-err').textContent='Both fields are required.';return;}
+  if(!url.includes('supabase.co')){document.getElementById('setup-err').textContent='Invalid Supabase URL.';return;}
+  sbUrl=url; sbKey=key;
+  localStorage.setItem('sb_url',sbUrl);
+  localStorage.setItem('sb_key',sbKey);
+  // Switch to login form
+  document.getElementById('login-setup').style.display='none';
+  document.getElementById('login-form').style.display='block';
+  document.getElementById('setup-err').textContent='';
+  initSupabaseAuth();
+  // Focus email field
+  setTimeout(()=>document.getElementById('login-email').focus(),100);
 }
 
 async function doLogin(){
@@ -2403,18 +2431,39 @@ async function delRecovery(recId,ledgerId){
   <div class="login-box">
     <div class="login-logo">Logistique World Wide LLC</div>
     <div class="login-sub">Payroll Management System</div>
-    <div class="login-title">Sign in</div>
-    <div class="login-field">
-      <label>Email address</label>
-      <input type="email" id="login-email" placeholder="your@email.com" onkeydown="if(event.key==='Enter')doLogin()">
+
+    <!-- Setup panel (shown when Supabase not configured) -->
+    <div id="login-setup" style="display:none">
+      <div class="login-title" style="font-size:16px">First-time setup</div>
+      <div style="font-size:12px;color:var(--text-2);margin-bottom:1rem;line-height:1.5">Enter your Supabase credentials to connect. These are saved in this browser only.</div>
+      <div class="login-field">
+        <label>Supabase Project URL</label>
+        <input type="text" id="setup-url" placeholder="https://xxxx.supabase.co" style="font-family:var(--mono);font-size:12px">
+      </div>
+      <div class="login-field">
+        <label>Publishable key</label>
+        <input type="text" id="setup-key" placeholder="sb_publishable_..." style="font-family:var(--mono);font-size:12px">
+      </div>
+      <button class="login-btn" onclick="saveSetupAndContinue()">Save & continue</button>
+      <div class="login-err" id="setup-err"></div>
     </div>
-    <div class="login-field">
-      <label>Password</label>
-      <input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+
+    <!-- Login panel -->
+    <div id="login-form">
+      <div class="login-title">Sign in</div>
+      <div class="login-field">
+        <label>Email address</label>
+        <input type="email" id="login-email" placeholder="your@email.com" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="login-field">
+        <label>Password</label>
+        <input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="login-btn" id="login-btn" onclick="doLogin()">Sign in</button>
+      <div class="login-err" id="login-err"></div>
     </div>
-    <button class="login-btn" id="login-btn" onclick="doLogin()">Sign in</button>
-    <div class="login-err" id="login-err"></div>
-    <div class="login-footer">Secured by Supabase Auth</div>
+
+    <div class="login-footer">Secured by Supabase Auth · Logistique WW LLC</div>
   </div>
 </div>
 
