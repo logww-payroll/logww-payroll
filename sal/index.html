@@ -129,6 +129,22 @@ tbody td{padding:8px 12px;vertical-align:middle}
 @keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
 @keyframes slideOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(20px)}}
 
+/* Login screen */
+.login-screen{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;align-items:center;justify-content:center}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:2.5rem;width:380px;box-shadow:0 8px 40px rgba(0,0,0,.1)}
+.login-logo{font-size:15px;font-weight:700;margin-bottom:4px}
+.login-sub{font-size:12px;color:var(--text-2);margin-bottom:2rem}
+.login-title{font-size:20px;font-weight:600;letter-spacing:-.3px;margin-bottom:1.5rem}
+.login-field{display:flex;flex-direction:column;gap:5px;margin-bottom:1rem}
+.login-field label{font-size:12px;font-weight:500;color:var(--text-2)}
+.login-field input{padding:9px 12px;border:1px solid var(--border-strong);border-radius:var(--r);font-size:14px;font-family:var(--font);background:var(--surface);color:var(--text)}
+.login-field input:focus{outline:none;border-color:var(--accent)}
+.login-btn{width:100%;padding:10px;border-radius:var(--r);border:none;background:var(--accent);color:var(--accent-fg);font-size:14px;font-weight:600;font-family:var(--font);cursor:pointer;margin-top:.5rem}
+.login-btn:hover{opacity:.88}
+.login-btn:disabled{opacity:.5;cursor:not-allowed}
+.login-err{font-size:12px;color:var(--red-text);margin-top:.75rem;text-align:center;min-height:18px}
+.login-footer{font-size:11px;color:var(--text-3);text-align:center;margin-top:1.5rem}
+
 /* Confirm dialog */
 .confirm-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
 .confirm-bg.open{display:flex}
@@ -158,6 +174,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
 .cat-other{background:var(--bg);color:var(--text-2);border:1px solid var(--border)}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 <div class="shell">
@@ -177,7 +194,13 @@ tbody td{padding:8px 12px;vertical-align:middle}
   <div class="sb-item" onclick="nav('employees',this)"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75M21 21v-2a4 4 0 0 0-3-3.85"/></svg>Employees</div>
   <div class="sb-item" onclick="nav('rates',this)"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 7h6M9 12h6M9 17h4"/><rect x="4" y="3" width="16" height="18" rx="2"/></svg>Commission rates</div>
   <div class="sb-item" onclick="nav('settings',this)"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>Settings</div>
-  <div class="sb-foot"><div class="dot" id="conn-dot"></div><span id="conn-lbl">Not connected</span></div>
+  <div class="sb-foot">
+    <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
+      <div class="dot" id="conn-dot"></div>
+      <span id="conn-lbl" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px">Not connected</span>
+    </div>
+    <button onclick="doLogout()" title="Sign out" style="background:none;border:none;cursor:pointer;color:var(--text-3);padding:2px 4px;font-size:13px;flex-shrink:0" id="logout-btn" style="display:none">⎋</button>
+  </div>
 </aside>
 
 <main class="main">
@@ -1280,7 +1303,9 @@ function setSt(msg,type){const c={ok:'var(--green-text)',err:'var(--red-text)',w
 function setDot(ok){document.getElementById('conn-dot').className='dot '+(ok?'ok':'err');document.getElementById('conn-lbl').textContent=ok?'Connected':'Error';}
 
 async function pushSB(run,lines){
-  const h={apikey:sbKey,Authorization:'Bearer '+sbKey,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
+  let authToken=sbKey;
+  if(supabaseClient){try{const {data:{session}}=await supabaseClient.auth.getSession();if(session?.access_token)authToken=session.access_token;}catch(e){}}
+  const h={apikey:sbKey,Authorization:'Bearer '+authToken,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
   try{
     await fetch(`${sbUrl}/rest/v1/payroll_runs`,{method:'POST',headers:h,body:JSON.stringify(run)});
     for(const L of lines)await fetch(`${sbUrl}/rest/v1/payroll_lines`,{method:'POST',headers:h,body:JSON.stringify(L)});
@@ -1326,12 +1351,8 @@ function closeM(id){document.getElementById(id).classList.remove('open');}
 
 // Init
 sbUrl=localStorage.getItem('sb_url')||'';sbKey=localStorage.getItem('sb_key')||'';
-if(sbUrl&&sbKey){
-  document.getElementById('conn-dot').className='dot ok';
-  document.getElementById('conn-lbl').textContent='Supabase configured';
-  // Pull latest data from Supabase on load
-  setTimeout(()=>syncFromSupabase(),500);
-}
+// Check auth session on load
+setTimeout(()=>checkSession(), 200);
 // Pre-initialise all month/year selects so pages show data immediately
 ['trip-month','trip-year','ded-month','ded-year','run-month','run-year','imp-month','imp-year'].forEach(id=>{
   const el=document.getElementById(id);
@@ -1758,7 +1779,15 @@ function showConfirm(title, msg, okLabel='Confirm', okClass='btn pri', type='war
 /* ─── SUPABASE SYNC (pull on load) ─── */
 async function syncFromSupabase(){
   if(!sbUrl||!sbKey) return;
-  const h={apikey:sbKey,Authorization:'Bearer '+sbKey};
+  // Use session token if logged in, fall back to publishable key
+  let authToken = sbKey;
+  if(supabaseClient){
+    try{
+      const {data:{session}} = await supabaseClient.auth.getSession();
+      if(session?.access_token) authToken = session.access_token;
+    }catch(e){}
+  }
+  const h={apikey:sbKey,Authorization:'Bearer '+authToken};
   try{
     // Show syncing indicator
     document.getElementById('conn-lbl').textContent='Syncing...';
@@ -1858,6 +1887,101 @@ async function pushInitialData(){
     }
     console.log('Initial data pushed to Supabase');
   }catch(e){console.error('Push initial:',e);}
+}
+
+
+/* ─── SUPABASE AUTH ─── */
+let supabaseClient = null;
+let currentUser = null;
+
+function initSupabaseAuth(){
+  if(!sbUrl||!sbKey) return;
+  try{
+    supabaseClient = supabase.createClient(sbUrl, sbKey);
+  } catch(e){
+    console.error('Supabase client init error:', e);
+  }
+}
+
+async function checkSession(){
+  // If no Supabase configured — show login screen asking to set up
+  if(!sbUrl||!sbKey){
+    showLoginScreen('Configure Supabase in Settings to enable login.');
+    return;
+  }
+  initSupabaseAuth();
+  try{
+    const {data:{session}} = await supabaseClient.auth.getSession();
+    if(session&&session.user){
+      currentUser = session.user;
+      hideLoginScreen();
+      document.getElementById('conn-lbl').textContent = session.user.email;
+      document.getElementById('logout-btn').style.display='block';
+      document.getElementById('conn-dot').className='dot ok';
+      // Sync data
+      setTimeout(()=>syncFromSupabase(),300);
+    } else {
+      showLoginScreen();
+    }
+  } catch(e){
+    console.error('Session check error:', e);
+    showLoginScreen();
+  }
+}
+
+function showLoginScreen(msg=''){
+  const ls = document.getElementById('login-screen');
+  if(ls) ls.style.display='flex';
+  if(msg) document.getElementById('login-err').textContent=msg;
+}
+
+function hideLoginScreen(){
+  const ls = document.getElementById('login-screen');
+  if(ls) ls.style.display='none';
+}
+
+async function doLogin(){
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  const btn   = document.getElementById('login-btn');
+  const err   = document.getElementById('login-err');
+
+  if(!email||!pass){ err.textContent='Please enter email and password.'; return; }
+  if(!sbUrl||!sbKey){ err.textContent='Supabase not configured. Contact admin.'; return; }
+
+  btn.disabled=true; btn.textContent='Signing in…'; err.textContent='';
+  initSupabaseAuth();
+
+  try{
+    const {data, error} = await supabaseClient.auth.signInWithPassword({email, password:pass});
+    if(error){
+      err.textContent = error.message==='Invalid login credentials'
+        ? 'Incorrect email or password.' : error.message;
+      btn.disabled=false; btn.textContent='Sign in';
+      return;
+    }
+    currentUser = data.user;
+    hideLoginScreen();
+    document.getElementById('conn-lbl').textContent = data.user.email;
+    document.getElementById('logout-btn').style.display='block';
+    document.getElementById('conn-dot').className='dot ok';
+    toast('Welcome back', data.user.email, 'success', 3000);
+    setTimeout(()=>syncFromSupabase(), 300);
+  } catch(e){
+    err.textContent = 'Login failed: '+e.message;
+    btn.disabled=false; btn.textContent='Sign in';
+  }
+}
+
+async function doLogout(){
+  if(supabaseClient){
+    await supabaseClient.auth.signOut();
+  }
+  currentUser=null;
+  // Clear sensitive data from memory
+  DB.runs=[]; DB.lines=[]; DB.trips=[]; DB.deds=[];
+  showLoginScreen();
+  toast('Signed out','','info',2000);
 }
 
 /* ─── EMAIL SENDING ─── */
@@ -2273,6 +2397,26 @@ async function delRecovery(recId,ledgerId){
   </div>
 </div>
 
+
+<!-- Login screen -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">Logistique World Wide LLC</div>
+    <div class="login-sub">Payroll Management System</div>
+    <div class="login-title">Sign in</div>
+    <div class="login-field">
+      <label>Email address</label>
+      <input type="email" id="login-email" placeholder="your@email.com" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="login-field">
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Sign in</button>
+    <div class="login-err" id="login-err"></div>
+    <div class="login-footer">Secured by Supabase Auth</div>
+  </div>
+</div>
 
 <!-- Toast container -->
 <div class="toast-container" id="toast-container"></div>
