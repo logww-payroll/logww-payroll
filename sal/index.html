@@ -1437,42 +1437,55 @@ async function pushSB(run,lines){
   let authToken=sbKey;
   if(supabaseClient){try{const {data:{session}}=await supabaseClient.auth.getSession();if(session?.access_token)authToken=session.access_token;}catch(e){}}
   const h={apikey:sbKey,Authorization:'Bearer '+authToken,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
-  const post = (table,body)=>fetch(`${sbUrl}/rest/v1/${table}`,{method:'POST',headers:h,body:JSON.stringify(body)});
+  const post=(table,body)=>fetch(`${sbUrl}/rest/v1/${table}`,{method:'POST',headers:h,body:JSON.stringify(body)});
   try{
-    // Push run and lines
-    await post('payroll_runs', run);
-    for(const L of lines) await post('payroll_lines', {
-      id:L.id,run_id:L.run_id,employee_id:L.employee_id,employee_name:L.employee_name,
-      worked_days:L.worked_days||0,total_days:L.total_days||30,
-      basic_salary:L.basic_salary||0,trip_commission:L.trip_commission||0,
-      other_commission:L.other_commission||0,advances:L.advances||0,
-      deduction_notes:L.deduction_notes||'',total_fixed:L.total_fixed||0,
-      total_variable:L.total_variable||0,net_payable:L.net_payable||0,
-    });
-    // Push trips and deductions for this period
+    // Payroll run + lines
+    await post('payroll_runs',{id:run.id,period_month:run.period_month,period_year:run.period_year,
+      total_net:run.total_net||0,total_gross:run.total_gross||0,employee_count:run.employee_count||0,
+      status:run.status||'',paid_date:run.paid_date||null,created_at:run.created_at||new Date().toISOString()});
+    for(const L of lines){
+      await post('payroll_lines',{id:L.id,run_id:L.run_id,employee_id:L.employee_id,employee_name:L.employee_name,
+        worked_days:L.worked_days||0,total_days:L.total_days||30,basic_salary:L.basic_salary||0,
+        trip_commission:L.trip_commission||0,other_commission:L.other_commission||0,advances:L.advances||0,
+        deduction_notes:L.deduction_notes||'',total_fixed:L.total_fixed||0,total_variable:L.total_variable||0,
+        net_payable:L.net_payable||0});
+    }
+    // Trips + deductions for this period
     const m=run.period_month,y=run.period_year;
     for(const t of DB.trips.filter(x=>x.period_month===m&&x.period_year===y)){
       await post('trip_log',{id:t.id,period_month:t.period_month,period_year:t.period_year,
         employee_id:t.employee_id,employee_name:t.employee_name,trip_date:t.trip_date||null,
-        truck:t.truck||'',route:t.route||'',customer:t.customer||'',
-        trip_comm:t.trip_comm||0,border_exp:t.border_exp||0,diesel_exp:t.diesel_exp||0,
-        other_exp:t.other_exp||0,total:t.total||0,from_loc:t.from_loc||'',
-        to_loc:t.to_loc||'',notes:t.notes||''});
+        truck:t.truck||'',route:t.route||'',customer:t.customer||'',trip_comm:t.trip_comm||0,
+        border_exp:t.border_exp||0,diesel_exp:t.diesel_exp||0,other_exp:t.other_exp||0,
+        total:t.total||0,from_loc:t.from_loc||'',to_loc:t.to_loc||'',notes:t.notes||''});
     }
     for(const d of DB.deds.filter(x=>x.period_month===m&&x.period_year===y)){
       await post('deductions',{id:d.id,period_month:d.period_month,period_year:d.period_year,
         employee_id:d.employee_id,employee_name:d.employee_name,ded_date:d.ded_date||null,
-        category:d.category||'other',description:d.description||'',
-        reference:d.reference||'',amount:d.amount||0,traffic_points:d.traffic_points||0});
+        category:d.category||'other',description:d.description||'',reference:d.reference||'',
+        amount:d.amount||0,traffic_points:d.traffic_points||0});
     }
-    // Push employees (upsert to keep email/details in sync)
+    // Employees (keep emails in sync)
     for(const e of DB.employees){
       await post('employees',{id:e.id,name:e.name,sheet:e.sheet,designation:e.designation||'',
-        work_permit:e.work_permit||'',labor_card:e.labor_card||'',
-        iban:e.iban||'',basic_salary:e.basic_salary||0,email:e.email||''});
+        work_permit:e.work_permit||'',labor_card:e.labor_card||'',iban:e.iban||'',
+        basic_salary:e.basic_salary||0,email:e.email||''});
     }
-    console.log('Pushed to Supabase successfully');
-  }catch(e){console.error('Supabase push:',e);}
+    // Ledger + recoveries (all entries, not just this period)
+    for(const l of DB.ledger){
+      await post('employee_ledger',{id:l.id,employee_id:l.employee_id,employee_name:l.employee_name,
+        date:l.date||null,type:l.type,type_label:l.type_label||'',description:l.description||'',
+        reference:l.reference||'',original_amount:l.original_amount||0,balance:l.balance||0,
+        emi:l.emi||0,start_month:l.start_month||1,start_year:l.start_year||2026,
+        status:l.status||'active'});
+    }
+    for(const r of DB.recoveries){
+      await post('ledger_recoveries',{id:r.id,ledger_id:r.ledger_id,employee_id:r.employee_id,
+        employee_name:r.employee_name,period_month:r.period_month,period_year:r.period_year,
+        amount:r.amount||0,notes:r.notes||''});
+    }
+    console.log('All data pushed to Supabase successfully');
+  }catch(e){console.error('Supabase push:',e);throw e;}
 }
 
 /* ─── EXPORT ─── */
