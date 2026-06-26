@@ -668,6 +668,7 @@ let DB={
   recoveries:safeGet('pl_recoveries', []),
   earnTypes:safeGet('pl_earn_types',[]),
   customEarns:JSON.parse(localStorage.getItem('pl_cearns')||'[]'),
+  suppls:JSON.parse(localStorage.getItem('pl_suppls')||'[]'),
   company:safeGet('pl_co', {name:'Logistique World Wide LLC',addr:'117A, Arenco Offices DIP-1, Dubai',wps:5,vat:0.25}),
 };
 
@@ -683,6 +684,7 @@ function save(){
   localStorage.setItem('pl_recoveries',JSON.stringify(DB.recoveries));
   localStorage.setItem('pl_earn_types',JSON.stringify(DB.earnTypes));
   localStorage.setItem('pl_cearns',JSON.stringify(DB.customEarns));
+  localStorage.setItem('pl_suppls',JSON.stringify(DB.suppls));
 }
 
 function uid(){return 'id-'+Date.now()+'-'+Math.random().toString(36).slice(2);}
@@ -1293,10 +1295,12 @@ function renderHistory(){
           </div>
           <div style="font-size:12px;color:var(--text-2);margin-top:2px">${r.employee_count} employees · ${aed(r.total_net)} net${r.paid_date?' · Paid '+r.paid_date:''}</div></div>
         <div style="display:flex;gap:8px"><button class="btn xs" onclick="event.stopPropagation();viewRun('${r.id}')">View slips</button>
+        ${DB.suppls&&DB.suppls.filter(s=>s.run_id===r.id).length?`<button class="btn xs" onclick="event.stopPropagation();viewSupplSlips('${r.id}')" style="color:var(--blue-text)">Suppl slips (${DB.suppls.filter(s=>s.run_id===r.id).length})</button>`:''}
         <button class="btn xs" onclick="event.stopPropagation();sendRunSlips('${r.id}')">Send emails</button>
         <button class="btn xs" onclick="event.stopPropagation();exportRunCSV('${r.id}')">Export CSV</button>
         ${r.status==='paid'
-          ?'<span class="badge" style="background:var(--green-bg);color:var(--green-text);padding:4px 10px">✓ Paid</span>'
+          ?`<span class="badge" style="background:var(--green-bg);color:var(--green-text);padding:4px 10px">✓ Paid</span>
+           <button class="btn xs" onclick="event.stopPropagation();openSupplModal('${r.id}')" style="color:var(--blue-text);border-color:var(--blue-bd)">+ Supplementary</button>`
           :`<button class="btn xs" style="color:var(--green-text);border-color:var(--green-bd)" onclick="event.stopPropagation();markRunPaid('${r.id}')">Mark paid</button>`
         }
         ${r.status==='paid'
@@ -2787,6 +2791,129 @@ function printLedgerStatement(empId){
   win.document.close();
 }
 
+
+/* ─── SUPPLEMENTARY PAYMENTS ─── */
+let _supplRunId = null;
+
+function openSupplModal(runId){
+  const run = DB.runs.find(r=>r.id===runId); if(!run) return;
+  _supplRunId = runId;
+  document.getElementById('suppl-run-id').value = runId;
+  const period = MONTHS[run.period_month-1]+' '+run.period_year;
+  document.getElementById('suppl-period-label').textContent = 'Supplementary for '+period;
+
+  // Get existing supplementary for this run
+  const existing = DB.suppls.filter(s=>s.run_id===runId);
+
+  // Build employee rows from the run lines
+  const lines = DB.lines.filter(l=>l.run_id===runId);
+  document.getElementById('suppl-emp-list').innerHTML = lines.map(L=>{
+    const e = DB.employees.find(x=>x.id===L.employee_id)||{};
+    const prev = existing.filter(s=>s.employee_id===L.employee_id);
+    const prevTotal = prev.reduce((s,x)=>s+(parseFloat(x.amount)||0),0);
+    return `<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div>
+          <div style="font-size:13px;font-weight:500">${L.employee_name}</div>
+          <div style="font-size:11px;color:var(--text-2)">Original net: ${aed(L.net_payable||0)}${prevTotal>0?' · Previous suppl: '+aed(prevTotal):''}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div>
+          <label style="font-size:11px;color:var(--text-2);display:block;margin-bottom:4px">Description</label>
+          <input type="text" class="ri" id="suppl-desc-${L.employee_id}" placeholder="e.g. Performance bonus" style="font-size:12px">
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--text-2);display:block;margin-bottom:4px">Amount (AED) — leave 0 to skip</label>
+          <input type="number" class="ri" id="suppl-amt-${L.employee_id}" value="0" min="0" style="font-size:12px">
+        </div>
+      </div>
+      ${prev.length?`<div style="margin-top:8px;font-size:11px;color:var(--text-3)">Previous: ${prev.map(x=>x.description+' '+aed(x.amount)).join(', ')}</div>`:''}
+    </div>`;
+  }).join('');
+
+  document.getElementById('modal-suppl').classList.add('open');
+}
+
+async function saveSuppl(){
+  const runId = document.getElementById('suppl-run-id').value;
+  const run = DB.runs.find(r=>r.id===runId); if(!run) return;
+  const lines = DB.lines.filter(l=>l.run_id===runId);
+  const period = MONTHS[run.period_month-1]+' '+run.period_year;
+
+  const newSuppl = [];
+  lines.forEach(L=>{
+    const amt = parseFloat(document.getElementById('suppl-amt-'+L.employee_id)?.value)||0;
+    const desc = document.getElementById('suppl-desc-'+L.employee_id)?.value?.trim()||'Supplementary payment';
+    if(amt > 0){
+      newSuppl.push({
+        id:uid(), run_id:runId,
+        employee_id:L.employee_id, employee_name:L.employee_name,
+        period_month:run.period_month, period_year:run.period_year,
+        description:desc, amount:amt,
+        created_at:new Date().toISOString()
+      });
+    }
+  });
+
+  if(!newSuppl.length){
+    toast('Nothing to save','Enter an amount for at least one employee.','warn');
+    return;
+  }
+
+  DB.suppls.push(...newSuppl);
+  save();
+  closeM('modal-suppl');
+  toast('Saved',`${newSuppl.length} supplementary payment${newSuppl.length>1?'s':''} added for ${period}.`,'success',4000);
+  renderHistory();
+}
+
+function viewSupplSlips(runId){
+  const run = DB.runs.find(r=>r.id===runId); if(!run) return;
+  const suppls = DB.suppls.filter(s=>s.run_id===runId);
+  if(!suppls.length){ toast('No supplementary payments','None recorded for this run.','info'); return; }
+
+  const period = MONTHS[run.period_month-1]+' '+run.period_year;
+  const co = DB.company;
+
+  document.getElementById('all-t').textContent = 'Supplementary slips — '+period;
+  document.getElementById('all-c').innerHTML = suppls.map(s=>{
+    const e = DB.employees.find(x=>x.id===s.employee_id)||{name:s.employee_name};
+    const wps = co.wps||5, vat = co.vat||0.25;
+    const grand = s.amount + wps + vat;
+    return `<div style="margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)">
+      <div class="slip">
+        <div class="slip-hd">
+          <div><div class="slip-co">${co.name}</div><div class="slip-addr">${co.addr}</div></div>
+          <div style="text-align:right">
+            <div style="font-size:12px;font-weight:600">SUPPLEMENTARY SLIP</div>
+            <div style="font-size:10px;color:var(--text-2)">${period}</div>
+          </div>
+        </div>
+        <div class="slip-grid">
+          <div class="sf"><label>Employee</label><span>${e.name}</span></div>
+          <div class="sf"><label>Designation</label><span>${e.designation||'—'}</span></div>
+          <div class="sf"><label>Work Permit</label><span class="mono">${e.work_permit||'—'}</span></div>
+          <div class="sf"><label>IBAN</label><span class="mono">${e.iban||'—'}</span></div>
+        </div>
+        <div class="slip-sec">Supplementary payment</div>
+        <div class="sr"><span>${s.description}</span><span>${num(s.amount)}</span></div>
+        <div class="sr tot"><span>Total supplementary</span><span>${num(s.amount)}</span></div>
+        <div class="slip-sec">Summary</div>
+        <div class="sr"><span>Supplementary amount</span><span>${num(s.amount)}</span></div>
+        <div class="sr"><span>WPS commission</span><span>${num(wps)}</span></div>
+        <div class="sr"><span>VAT</span><span>${num(vat)}</span></div>
+        <div class="slip-net"><span class="slip-net-l">Net payable</span><span class="slip-net-v">${aed(grand)}</span></div>
+        <div class="slip-memo">
+          <div class="slip-memo-t">Note</div>
+          <div class="slip-disc">This is a supplementary payment in addition to the regular ${period} salary. All variable incentives and commissions are entirely at management's discretion.</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('modal-all').classList.add('open');
+}
+
 /* ─── EMAIL SENDING ─── */
 async function sendSlipsForRun(run, lines, period){
   const withEmail=lines.filter(L=>{const e=DB.employees.find(x=>x.id===L.employee_id);return e&&e.email&&e.email.includes('@');});
@@ -3326,6 +3453,26 @@ async function delRecovery(recId,ledgerId){
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         Send slips
       </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Supplementary payment modal -->
+<div class="modal-bg" id="modal-suppl">
+  <div class="modal" style="width:560px">
+    <div class="modal-t">Supplementary payment<button class="btn xs" onclick="closeM('modal-suppl')">✕</button></div>
+    <input type="hidden" id="suppl-run-id">
+    <div id="suppl-period-label" style="font-size:13px;color:var(--text-2);margin-bottom:1rem"></div>
+    <div class="notice info" style="margin-bottom:1rem">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+      <span style="font-size:12px">Add extra payments to a paid run without unlocking it. Each entry generates a separate supplementary slip showing only the additional amounts.</span>
+    </div>
+    <div class="sdiv">Employee payments</div>
+    <div id="suppl-emp-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:1rem;max-height:360px;overflow-y:auto"></div>
+    <div class="modal-ft">
+      <button class="btn" onclick="closeM('modal-suppl')">Cancel</button>
+      <button class="btn pri" onclick="saveSuppl()">Save supplementary</button>
     </div>
   </div>
 </div>
