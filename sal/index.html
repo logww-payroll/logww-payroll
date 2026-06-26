@@ -685,18 +685,9 @@ let DB={
 };
 
 function save(){
-  localStorage.setItem('pl_emp',JSON.stringify(DB.employees));
-  localStorage.setItem('pl_rates',JSON.stringify(DB.rates));
-  localStorage.setItem('pl_trips',JSON.stringify(DB.trips));
-  localStorage.setItem('pl_deds',JSON.stringify(DB.deds));
-  localStorage.setItem('pl_runs',JSON.stringify(DB.runs));
-  localStorage.setItem('pl_lines',JSON.stringify(DB.lines));
-  localStorage.setItem('pl_co',JSON.stringify(DB.company));
-  localStorage.setItem('pl_ledger',JSON.stringify(DB.ledger));
-  localStorage.setItem('pl_recoveries',JSON.stringify(DB.recoveries));
-  localStorage.setItem('pl_earn_types',JSON.stringify(DB.earnTypes));
-  localStorage.setItem('pl_cearns',JSON.stringify(DB.customEarns));
-  localStorage.setItem('pl_suppls',JSON.stringify(DB.suppls));
+  // Supabase is the only source of truth — no localStorage storage
+  // Data lives in DB object in memory only
+  // Persisted to Supabase via pushSB() and pushAllToSupabase()
 }
 
 function uid(){return 'id-'+Date.now()+'-'+Math.random().toString(36).slice(2);}
@@ -2061,8 +2052,7 @@ async function syncFromSupabase(){
       DB.deds = [...sbDeds.map(d=>({...d,amount:parseFloat(d.amount)||0})), ...localOnly];
     }
 
-    // Persist merged data to localStorage
-    save();
+    // Data is in memory (DB object) — no localStorage
 
     const total = sbEmps.length+sbRuns.length+sbLines.length+sbTrips.length;
     document.getElementById('conn-dot').className='dot ok';
@@ -3086,6 +3076,29 @@ function openPrintWindow(title, content){
     ${content}
   </body></html>`);
   win.document.close();
+}
+
+
+/* ─── IMMEDIATE SUPABASE PUSH HELPERS ─── */
+async function sbPost(table, data){
+  if(!sbUrl||!sbKey) return;
+  let authToken=sbKey;
+  if(supabaseClient){try{const {data:{session}}=await supabaseClient.auth.getSession();if(session?.access_token)authToken=session.access_token;}catch(e){}}
+  return fetch(`${sbUrl}/rest/v1/${table}`,{
+    method:'POST',
+    headers:{apikey:sbKey,Authorization:'Bearer '+authToken,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+    body:JSON.stringify(data)
+  });
+}
+
+async function sbDelete(table, filter){
+  if(!sbUrl||!sbKey) return;
+  let authToken=sbKey;
+  if(supabaseClient){try{const {data:{session}}=await supabaseClient.auth.getSession();if(session?.access_token)authToken=session.access_token;}catch(e){}}
+  return fetch(`${sbUrl}/rest/v1/${table}?${filter}`,{
+    method:'DELETE',
+    headers:{apikey:sbKey,Authorization:'Bearer '+authToken}
+  });
 }
 
 /* ─── EMAIL SENDING ─── */
