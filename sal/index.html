@@ -691,6 +691,21 @@ function save(){
 }
 
 function uid(){return 'id-'+Date.now()+'-'+Math.random().toString(36).slice(2);}
+function fmtDate(d){
+  if(!d||d==='—') return '—';
+  try{
+    const dt=new Date(d);
+    if(isNaN(dt.getTime())) return d;
+    return String(dt.getDate()).padStart(2,'0')+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+dt.getFullYear();
+  }catch(e){return d;}
+}
+function parseDMY(s){
+  if(!s) return '';
+  const p=s.split(/[-/]/);
+  if(p.length===3&&p[0].length===4) return s; // yyyy-mm-dd already
+  if(p.length===3) return p[2].padStart(4,'20')+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');
+  return s;
+}
 function aed(n){return 'AED '+Number(n||0).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function num(n){return Number(n||0).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function periodKey(m,y){return y*100+m;}
@@ -800,7 +815,7 @@ function renderTrips(){
       <div class="tw" style="border:none;border-radius:0"><table>
         <thead><tr><th>Date</th><th>Truck</th><th>Route</th><th>From</th><th>To</th><th>Trip comm</th><th>Border</th><th>Diesel</th><th>Other</th><th>Total</th><th>Notes</th><th></th></tr></thead>
         <tbody>${d.trips.sort((a,b)=>a.trip_date>b.trip_date?1:-1).map(t=>`<tr>
-          <td>${t.trip_date||'—'}</td>
+          <td>${fmtDate(t.trip_date)}</td>
           <td class="mono">${t.truck||'—'}</td>
           <td><span class="tag" style="background:var(--blue-bg);color:var(--blue-text)">${t.route||'—'}</span></td>
           <td style="font-size:12px">${t.from_loc||'—'}</td>
@@ -939,7 +954,7 @@ function renderDeds(){
       <div class="tw" style="border:none;border-radius:0"><table>
         <thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Reference</th><th>Traffic pts</th><th>Amount</th><th>Attachment</th><th></th></tr></thead>
         <tbody>${d.deds.sort((a,b)=>a.ded_date>b.ded_date?1:-1).map(x=>`<tr>
-          <td>${x.ded_date||'—'}</td>
+          <td>${fmtDate(x.ded_date)}</td>
           <td><span class="badge ${catClass(x.category)}">${catLabel(x.category)}</span></td>
           <td style="max-width:220px">${x.description||'—'}</td>
           <td class="mono" style="font-size:11px">${x.reference||'—'}</td>
@@ -1328,7 +1343,7 @@ function buildSlip(e,L,period){
     <div class="slip-net"><span class="slip-net-l">Net payable</span><span class="slip-net-v">${net>0?aed(grand):'AED 0.00'}</span></div>
     ${(tripLines.length||dedLines.length||trip||adv)?`<div class="slip-memo">
       <div class="slip-memo-t">Additional memo — commission & deduction detail</div>
-      ${tripLines.length?`<div style="font-size:10px;font-weight:600;color:var(--text-2);margin:5px 0 3px">Trips</div>${tripLines.map(t=>`<div class="slip-memo-r"><span>${t.trip_date} · ${t.route}${t.truck?' · '+t.truck:''}${t.from_loc?' · '+t.from_loc+' → '+t.to_loc:''}</span><span>${num(t.trip_comm)}</span></div>`).join('')}`
+      ${tripLines.length?`<div style="font-size:10px;font-weight:600;color:var(--text-2);margin:5px 0 3px">Trips</div>${tripLines.map(t=>`<div class="slip-memo-r"><span>${fmtDate(t.trip_date)} · ${t.route}${t.truck?' · '+t.truck:''}${t.from_loc?' · '+t.from_loc+' → '+t.to_loc:''}</span><span>${num(t.trip_comm)}</span></div>`).join('')}`
         :(trip?`<div class="slip-memo-r"><span>Trip commissions</span><span>${num(trip)}</span></div>`:'')
       }
       ${other?`<div class="slip-memo-r"><span>Attendance allowance</span><span>${num(other)}</span></div>`:''}
@@ -1384,7 +1399,7 @@ function renderHistory(){
             <div style="font-weight:600">${MONTHS[r.period_month-1]} ${r.period_year}</div>
             ${r.status==='paid'?'<span class="badge" style="background:var(--green-bg);color:var(--green-text)">Paid</span>':''}
           </div>
-          <div style="font-size:12px;color:var(--text-2);margin-top:2px">${r.employee_count} employees · ${aed(r.total_net)} net${r.paid_date?' · Paid '+r.paid_date:''}</div></div>
+          <div style="font-size:12px;color:var(--text-2);margin-top:2px">${r.employee_count} employees · ${aed(r.total_net)} net${r.paid_date?' · Paid '+fmtDate(r.paid_date):''}</div></div>
         <div style="display:flex;gap:8px"><button class="btn xs" onclick="event.stopPropagation();viewRun('${r.id}')">View slips</button>
         ${DB.suppls&&DB.suppls.filter(s=>s.run_id===r.id).length?`<button class="btn xs" onclick="event.stopPropagation();viewSupplSlips('${r.id}')" style="color:var(--blue-text)">Suppl slips (${DB.suppls.filter(s=>s.run_id===r.id).length})</button>`:''}
         <button class="btn xs" onclick="event.stopPropagation();sendRunSlips('${r.id}')">Send emails</button>
@@ -1661,7 +1676,7 @@ function renderPastePreview(){
   if(!total){document.getElementById('paste-preview').innerHTML='<div class="empty">No rows detected.</div>';document.getElementById('paste-confirm-btn').style.display='none';return;}
   let h='<div style="display:flex;gap:12px;margin-bottom:.75rem;font-size:12px"><span style="color:var(--green-text);font-weight:500">'+valid+' rows ready</span>'+(warn?'<span style="color:var(--amber-text);font-weight:500">'+warn+' need attention</span>':'')+'<span style="color:var(--text-2)">'+total+' total</span></div>';
   h+='<div class="tw"><table><thead><tr><th>#</th><th>Date</th><th>Driver</th><th>Route</th><th>Truck</th><th>Trip comm</th><th>Border</th><th>Diesel</th><th>Other</th><th>Total</th></tr></thead><tbody>'
-  +parsedPasteRows.map(r=>'<tr style="'+((!r._empMatch||!r._routeMatch)?'background:var(--amber-bg)':'')+'"><td style="color:var(--text-2)">'+r._line+'</td><td>'+(r.trip_date||'\u2014')+'</td>'
+  +parsedPasteRows.map(r=>'<tr style="'+((!r._empMatch||!r._routeMatch)?'background:var(--amber-bg)':'')+'"><td style="color:var(--text-2)">'+r._line+'</td><td>'+fmtDate(r.trip_date)+'</td>'
   +'<td>'+(r._empMatch?'<span style="font-size:11px;font-weight:500">'+r.employee_name+'</span>':'<span style="color:var(--red-text);font-size:11px">Not found: '+r._empName+'</span>')+'</td>'
   +'<td>'+(r._routeMatch?'<span class="tag" style="background:var(--blue-bg);color:var(--blue-text)">'+r.route+'</span>':'<span style="color:var(--red-text);font-size:11px">Not found: '+r._routeName+'</span>')+'</td>'
   +'<td class="mono">'+(r.truck||'\u2014')+'</td><td style="font-weight:500">'+r.trip_comm+'</td><td style="color:var(--text-2)">'+(r.border_exp||'\u2014')+'</td><td style="color:var(--text-2)">'+(r.diesel_exp||'\u2014')+'</td><td style="color:var(--text-2)">'+(r.other_exp||'\u2014')+'</td><td style="font-weight:600">'+r.total.toFixed(2)+'</td></tr>').join('')
@@ -2821,7 +2836,7 @@ function printLedgerStatement(empId){
       </tr>`).join('');
     return `
       <tr>
-        <td style="padding:7px 8px;font-size:12px">${l.date||'—'}</td>
+        <td style="padding:7px 8px;font-size:12px">${fmtDate(l.date)}</td>
         <td style="padding:7px 8px;font-size:12px">${LEDGER_TYPES[l.type]||l.type}</td>
         <td style="padding:7px 8px;font-size:12px">${l.description}</td>
         <td style="padding:7px 8px;font-size:12px;text-align:right">${aed(l.original_amount)}</td>
@@ -3328,7 +3343,7 @@ function renderLedger(){
         </tr>`).join('');
       return `
         <tr style="${isCleared?'opacity:.55':''}">
-          <td style="font-size:12px">${l.date||'—'}</td>
+          <td style="font-size:12px">${fmtDate(l.date)}</td>
           <td><span class="badge" style="background:${col.bg};color:${col.text}">${LEDGER_TYPES[l.type]||l.type}</span></td>
           <td style="font-size:12px;max-width:180px">${l.description}</td>
           <td class="mono">${l.reference||'—'}</td>
