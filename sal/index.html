@@ -1280,7 +1280,7 @@ function renderHistory(){
     <div class="hc">
       <div class="hh" onclick="toggleH('${r.id}')">
         <div><div style="font-weight:600">${MONTHS[r.period_month-1]} ${r.period_year}</div><div style="font-size:12px;color:var(--text-2);margin-top:2px">${r.employee_count} employees · ${aed(r.total_net)} net</div></div>
-        <div style="display:flex;gap:8px"><button class="btn xs" onclick="event.stopPropagation();viewRun('${r.id}')">View slips</button><button class="btn xs" onclick="event.stopPropagation();sendRunSlips('${r.id}')">Send emails</button><button class="btn xs" onclick="event.stopPropagation();exportRunCSV('${r.id}')">Export CSV</button></div>
+        <div style="display:flex;gap:8px"><button class="btn xs" onclick="event.stopPropagation();viewRun('${r.id}')">View slips</button><button class="btn xs" onclick="event.stopPropagation();sendRunSlips('${r.id}')">Send emails</button><button class="btn xs" onclick="event.stopPropagation();exportRunCSV('${r.id}')">Export CSV</button><button class="btn xs dan" onclick="event.stopPropagation();delRun('${r.id}')">Delete</button></div>
       </div>
       <div class="hb" id="hb-${r.id}">
         <div class="tw" style="margin-top:12px"><table><thead><tr><th>Employee</th><th>Days</th><th>Fixed</th><th>Trip comm</th><th>Other</th><th>Deductions</th><th style="text-align:right">Net</th></tr></thead>
@@ -2552,6 +2552,42 @@ async function confirmSendSlips(){
   const toSend = _sendLines.filter(L=>selected.includes(L.employee_id));
   closeM('modal-send-slips');
   await sendSlipsForRun(_sendRun, toSend, _sendPeriod);
+}
+
+
+async function delRun(runId){
+  const run = DB.runs.find(r=>r.id===runId);
+  if(!run) return;
+  const period = MONTHS[run.period_month-1]+' '+run.period_year;
+  if(!await showConfirm(
+    'Delete payroll run',
+    `This will permanently delete the ${period} payroll run, all salary lines, and associated trip/deduction data for that period.\n\nThis cannot be undone.`,
+    'Delete','btn dan','danger'
+  )) return;
+
+  // Remove from local DB
+  DB.runs = DB.runs.filter(r=>r.id!==runId);
+  DB.lines = DB.lines.filter(l=>l.run_id!==runId);
+  DB.trips = DB.trips.filter(t=>!(t.period_month===run.period_month&&t.period_year===run.period_year));
+  DB.deds = DB.deds.filter(d=>!(d.period_month===run.period_month&&d.period_year===run.period_year));
+  save();
+
+  // Delete from Supabase
+  if(sbUrl&&sbKey){
+    let authToken=sbKey;
+    if(supabaseClient){try{const {data:{session}}=await supabaseClient.auth.getSession();if(session?.access_token)authToken=session.access_token;}catch(e){}}
+    const h={apikey:sbKey,Authorization:'Bearer '+authToken};
+    try{
+      await fetch(`${sbUrl}/rest/v1/payroll_runs?id=eq.${runId}`,{method:'DELETE',headers:h});
+      await fetch(`${sbUrl}/rest/v1/payroll_lines?run_id=eq.${runId}`,{method:'DELETE',headers:h});
+      await fetch(`${sbUrl}/rest/v1/trip_log?period_month=eq.${run.period_month}&period_year=eq.${run.period_year}`,{method:'DELETE',headers:h});
+      await fetch(`${sbUrl}/rest/v1/deductions?period_month=eq.${run.period_month}&period_year=eq.${run.period_year}`,{method:'DELETE',headers:h});
+    }catch(e){console.error('Supabase delete error:',e);}
+  }
+
+  toast('Deleted',`${period} payroll run removed.`,'success',3000);
+  renderHistory();
+  renderDash();
 }
 
 /* ─── EMAIL SENDING ─── */
