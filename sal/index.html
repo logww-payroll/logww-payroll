@@ -2283,17 +2283,28 @@ function totalCustomEarns(empId, month, year){
 
 
 function buildEarnRows(empId, m, y){
-  const earns = getCustomEarns(empId, m, y).filter(c=>(parseFloat(c.amount)||0)>0);
-  if(!earns.length) return '';
+  const all = getCustomEarns(empId, m, y);
+  // Always show recurring types (so user can fill them in)
+  // Only show one-off types when they have a value
+  const earns = all.filter(c=>c.recur==='recurring'||(parseFloat(c.amount)||0)>0);
+  const hasRecurring = DB.earnTypes.filter(et=>et.active&&et.recur==='recurring').length > 0;
+  if(!earns.length && !hasRecurring) return '';
   return earns.map(c=>`
     <tr style="background:var(--bg)">
-      <td style="padding:4px 12px;font-size:11px;color:var(--text-2);padding-left:24px">↳ ${c.label}</td>
-      <td colspan="4"></td>
-      <td><input class="ri" type="number" min="0" value="${c.amount||0}" style="width:90px;font-size:11px"
-        oninput="saveCustomEarn('${empId}','${c.earn_type_id}',${m},${y},parseFloat(this.value)||0,'${c.label}','${c.recur}');updCustomTotal('${empId}',${m},${y})">
+      <td style="padding:4px 12px 4px 28px;font-size:11px;color:var(--text-2)">
+        <span style="color:var(--text-3)">↳</span> ${c.label}
+        ${c.recur==='recurring'?'<span style="font-size:9px;color:var(--text-3);margin-left:4px">recurring</span>':'<span style="font-size:9px;color:var(--amber-text);margin-left:4px">one-off</span>'}
       </td>
-      <td style="font-size:11px;color:var(--text-2)">${c.recur==='recurring'?'Recurring':'One-off'}</td>
-      <td style="text-align:right;font-size:11px" id="cnet-${empId}-${c.earn_type_id}"></td>
+      <td></td>
+      <td></td>
+      <td colspan="2">
+        <input class="ri" type="number" min="0" value="${c.amount||0}" 
+          placeholder="0" style="width:100px;font-size:12px"
+          oninput="saveCustomEarn('${empId}','${c.earn_type_id}',${m},${y},parseFloat(this.value)||0,'${c.label}','${c.recur}');updCustomTotal('${empId}',${m},${y})">
+      </td>
+      <td></td>
+      <td></td>
+      <td style="text-align:right;font-size:11px;color:var(--green-text)">${(parseFloat(c.amount)||0)>0?aed(parseFloat(c.amount)):''}</td>
       <td>${c.recur==='oneoff'?`<button class="btn xs dan" onclick="removeOneoffEarn('${empId}','${c._id}',${m},${y})">✕</button>`:''}  </td>
     </tr>`).join('');
 }
