@@ -1257,7 +1257,22 @@ function buildSlip(e,L,period){
     ${other>0?`<div class="sr"><span>Attendance allowance</span><span>${num(other)}</span></div>`:''}
     ${customEarnsList.map(c=>`<div class="sr"><span>${c.label}</span><span>${num(c.amount)}</span></div>`).join('')}
     <div class="sr tot"><span>Total variable</span><span>${num(trip+other+customTotal)}</span></div>
-    ${adv>0?`<div class="slip-sec">Section C — Deductions</div>${dedLines.length?dedLines.map(d=>`<div class="sr neg"><span>${catLabel(d.category)}: ${d.description}${d.reference?' ['+d.reference+']':''}</span><span>(${num(d.amount)})</span></div>`).join(''):`<div class="sr neg"><span>${L.deduction_notes||'Advances / deductions'}</span><span>(${num(adv)})</span></div>`}<div class="sr tot neg"><span>Total deductions</span><span>(${num(adv)})</span></div>`:''}
+    ${(()=>{
+      // Get ledger EMI lines for this employee/period
+      const ledgerDeds = empId&&m&&y ? DB.ledger.filter(l=>(l.employee_id===empId)&&l.balance>0).map(l=>{
+        const rec = DB.recoveries.find(r=>r.ledger_id===l.id&&r.period_month===m&&r.period_year===y);
+        const amt = rec ? rec.amount : (l.emi&&l.emi>0 ? Math.min(l.emi,l.balance) : 0);
+        return amt>0 ? {label:`${l.type_label||l.type}: ${l.description}`, amount:amt} : null;
+      }).filter(Boolean) : [];
+      const totalDeductions = (parseFloat(adv)||0) || (dedLines.reduce((s,d)=>s+d.amount,0) + ledgerDeds.reduce((s,d)=>s+d.amount,0));
+      const allDedLines = [...dedLines.map(d=>({label:`${catLabel(d.category)}: ${d.description}${d.reference?' ['+d.reference+']':''}`, amount:d.amount})), ...ledgerDeds];
+      if(!allDedLines.length && totalDeductions<=0) return '';
+      return `<div class="slip-sec">Section C — Deductions</div>`
+        + (allDedLines.length
+          ? allDedLines.map(d=>`<div class="sr neg"><span>${d.label}</span><span>(${num(d.amount)})</span></div>`).join('')
+          : `<div class="sr neg"><span>${L.deduction_notes||'Deductions'}</span><span>(${num(totalDeductions)})</span></div>`)
+        + `<div class="sr tot neg"><span>Total deductions</span><span>(${num(totalDeductions)})</span></div>`;
+    })()}
     <div class="slip-sec">Summary</div>
     <div class="sr"><span>Total earnings (A + B)</span><span>${num(basic+trip+other+customTotal)}</span></div>
     ${adv>0?`<div class="sr neg"><span>Less: deductions</span><span>(${num(adv)})</span></div>`:''}
