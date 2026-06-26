@@ -3527,12 +3527,42 @@ async function saveRecovery(){
   const y=parseInt(document.getElementById('rec-year').value);
   const exists=DB.recoveries.find(r=>r.ledger_id===ledgerId&&r.period_month===m&&r.period_year===y);
   if(exists&&!await showConfirm('Duplicate recovery','A recovery for '+MONTHS[m-1]+' '+y+' already exists ('+aed(exists.amount)+'). Add another?','Add anyway','btn pri','warn'))return;
-  DB.recoveries.push({id:uid(),ledger_id:ledgerId,employee_id:l.employee_id,employee_name:l.employee_name,
+  const rec={id:uid(),ledger_id:ledgerId,employee_id:l.employee_id,employee_name:l.employee_name,
     period_month:m,period_year:y,amount:amt,notes:document.getElementById('rec-notes').value,
-    created_at:new Date().toISOString()});
+    created_at:new Date().toISOString()};
+  DB.recoveries.push(rec);
   l.balance=Math.max(0,(l.balance||0)-amt);
   if(l.balance<=0)l.status='cleared';
-  save();closeM('modal-recovery');renderLedger();
+  save();
+
+  // Push recovery + updated ledger balance to Supabase immediately
+  if(sbUrl&&sbKey){
+    let authToken=sbKey;
+    if(supabaseClient){try{const {data:{session}}=await supabaseClient.auth.getSession();if(session?.access_token)authToken=session.access_token;}catch(e){}}
+    const h={apikey:sbKey,Authorization:'Bearer '+authToken,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
+    // Push recovery record
+    fetch(`${sbUrl}/rest/v1/ledger_recoveries`,{method:'POST',headers:h,
+      body:JSON.stringify({id:rec.id,ledger_id:rec.ledger_id,employee_id:rec.employee_id,
+        employee_name:rec.employee_name,period_month:rec.period_month,period_year:rec.period_year,
+        amount:rec.amount,notes:rec.notes||''})
+    }).catch(e=>console.error('Recovery push:',e));
+    // Update ledger balance
+    fetch(`${sbUrl}/rest/v1/employee_ledger?id=eq.${l.id}`,{method:'PATCH',headers:h,
+      body:JSON.stringify({balance:l.balance,status:l.status})
+    }).catch(e=>console.error('Ledger update:',e));
+  }
+
+  closeM('modal-recovery');
+  renderLedger();
+
+  // If Run Payroll is currently open for this period, refresh it
+  if(document.getElementById('page-run')?.classList.contains('active')){
+    const rm=getM('run-month'), ry=getY('run-year');
+    if(rm===m&&ry===y){
+      buildRunTable();
+      toast('Deduction updated',`Recovery of ${aed(amt)} added to ${MONTHS[m-1]} ${y} payroll.`,'success',3000);
+    }
+  }
 }
 
 async function delRecovery(recId,ledgerId){
