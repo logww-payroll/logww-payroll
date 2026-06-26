@@ -1084,11 +1084,24 @@ function buildRunTable(){
       worked_days:ex?.worked_days||(e.basic_salary>0?30:0),
     };
   });
-  document.getElementById('run-tw').innerHTML=`<table>
-    <thead><tr><th style="min-width:160px">Employee</th><th>Days</th><th>Basic (auto)</th><th>Trip comm<br><span style="font-weight:400;font-size:10px">from trip log</span></th><th>Deductions<br><span style="font-weight:400;font-size:10px">from deductions</span></th><th>Notes</th><th style="text-align:right">Net payable</th><th></th></tr></thead>
+  const _earnCols=DB.earnTypes.filter(et=>et.active);
+  const _earnHdrs=_earnCols.map(et=>`<th style="color:var(--blue-text);min-width:90px">${et.label}</th>`).join('');
+  const _colCount=5+_earnCols.length;
+  document.getElementById('run-tw').innerHTML=`<div style="overflow-x:auto"><table>
+    <thead><tr>
+      <th style="min-width:160px">Employee</th>
+      <th>Days</th>
+      <th>Basic</th>
+      <th>Trip comm</th>
+      ${_earnHdrs}
+      <th style="color:var(--red-text)">Deductions</th>
+      <th style="color:var(--text-2);font-size:11px">Ded detail</th>
+      <th style="text-align:right">Net payable</th>
+      <th></th>
+    </tr></thead>
     <tbody id="run-tb"></tbody>
-    <tfoot><tr style="background:var(--bg)"><td colspan="7" style="padding:9px 12px;font-weight:600;font-size:12px;color:var(--text-2)">Total</td><td style="padding:9px 12px;text-align:right;font-weight:600" id="run-tot">—</td><td></td></tr></tfoot>
-  </table>`;
+    <tfoot><tr style="background:var(--bg)"><td colspan="${_colCount}" style="padding:9px 12px;font-weight:600">Total</td><td style="padding:9px 12px;text-align:right;font-weight:600" id="run-tot">—</td><td></td></tr></tfoot>
+  </table></div>`;
   renderRunRows();
 }
 
