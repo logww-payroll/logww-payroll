@@ -897,7 +897,23 @@ function saveTrip(){
     notes:document.getElementById('tr-notes').value,
   };
   if(id)DB.trips=DB.trips.map(x=>x.id===id?t:x);else DB.trips.push(t);
-  save();closeM('modal-trip');renderTrips();
+  save();
+  // Push trip to Supabase immediately
+  if(sbUrl&&sbKey){
+    let authToken=sbKey;
+    if(supabaseClient){supabaseClient.auth.getSession().then(({data:{session}})=>{
+      if(session?.access_token)authToken=session.access_token;
+      fetch(`${sbUrl}/rest/v1/trip_log`,{method:'POST',
+        headers:{apikey:sbKey,Authorization:'Bearer '+authToken,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+        body:JSON.stringify({id:t.id,period_month:t.period_month,period_year:t.period_year,
+          employee_id:t.employee_id,employee_name:t.employee_name,trip_date:t.trip_date||null,
+          truck:t.truck||'',route:t.route||'',customer:t.customer||'',trip_comm:t.trip_comm||0,
+          border_exp:t.border_exp||0,diesel_exp:t.diesel_exp||0,other_exp:t.other_exp||0,
+          total:t.total||0,from_loc:t.from_loc||'',to_loc:t.to_loc||'',notes:t.notes||''})
+      }).catch(e=>console.error('Trip push:',e));
+    });}
+  }
+  closeM('modal-trip');renderTrips();
 }
 
 async function delTrip(id){if(await showConfirm('Delete trip','This trip will be permanently removed.','Delete','btn dan','danger')){DB.trips=DB.trips.filter(t=>t.id!==id);save();renderTrips();}}
@@ -1644,6 +1660,8 @@ function renderPastePreview(){
 }
 function confirmPaste(){
   const m=getM('trip-month'),y=getY('trip-year');
+  // Clear existing trips for this month before pasting
+  DB.trips=DB.trips.filter(t=>!(t.period_month===m&&t.period_year===y));
   parsedPasteRows.filter(r=>r._empMatch&&r._routeMatch).forEach(r=>{
     DB.trips.push({id:uid(),period_month:m,period_year:y,employee_id:r.employee_id,employee_name:r.employee_name,
       trip_date:r.trip_date,truck:r.truck,route:r.route,customer:r.customer,trip_comm:r.trip_comm,
