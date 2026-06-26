@@ -251,8 +251,9 @@ tbody td{padding:8px 12px;vertical-align:middle}
   <div id="run-notice" class="notice info"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg><span>Trip commissions and deductions are pulled automatically from the Trip Log and Deductions pages for the selected period.</span></div>
   <div class="tw" id="run-tw"></div>
   <div class="btn-row" style="margin-top:1rem">
-    <button class="btn pri" onclick="savePayroll()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Save & generate slips</button>
-    <button class="btn" onclick="previewAll()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Preview all slips</button>
+    <button class="btn pri" onclick="savePayroll()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Save payroll</button>
+    <button class="btn" onclick="previewAll()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Preview slips</button>
+    <button class="btn" onclick="sendRunSlipsForCurrentMonth()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Send slips</button>
     <button class="btn" onclick="exportCSV()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export CSV</button>
   </div>
 </div>
@@ -1164,18 +1165,7 @@ async function savePayroll(){
   const period = `${MONTHS[m-1]} ${y}`;
   const summary = `Payroll for ${period} saved.\n${run.employee_count} employees · ${aed(run.total_net)} net payable.`;
 
-  // Auto-send salary slips to employees with email on file
-  const withEmail = lines.filter(L=>{
-    const e=DB.employees.find(x=>x.id===L.employee_id);
-    return e && e.email && e.email.includes('@');
-  });
-
-  if(withEmail.length){
-    toast('Payroll saved',`${run.employee_count} employees · ${aed(run.total_net)} net payable.`,'success',3000);
-    setTimeout(()=>openSendSlipsModal(run, lines, period), 500);
-  } else {
-    toast('Payroll saved',`${run.employee_count} employees · ${aed(run.total_net)} net payable. Add emails in Employees tab to send slips.`,'success',6000);
-  }
+  toast('Payroll saved',`${run.employee_count} employees · ${aed(run.total_net)} net payable. Go to History to view or send slips.`,'success',5000);
 }
 
 /* ─── SLIPS ─── */
@@ -2588,6 +2578,17 @@ async function delRun(runId){
   toast('Deleted',`${period} payroll run removed.`,'success',3000);
   renderHistory();
   renderDash();
+}
+
+
+function sendRunSlipsForCurrentMonth(){
+  const m=getM('run-month'),y=getY('run-year');
+  const run=DB.runs.find(r=>r.period_month===m&&r.period_year===y);
+  if(!run){
+    toast('Not saved yet','Save the payroll first before sending slips.','warn');
+    return;
+  }
+  sendRunSlips(run.id);
 }
 
 /* ─── EMAIL SENDING ─── */
