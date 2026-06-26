@@ -3294,7 +3294,8 @@ function updateLedgerEmiPreview(){
 }
 
 function openLedgerModal(){
-  clearLedgerAttachments();
+  // Only clear attachments if this is a new entry (not edit - edit restores them after)
+  if(!document.getElementById('lm-id').value) clearLedgerAttachments();
   document.getElementById('lm-id').value='';document.getElementById('ledger-mt').textContent='Add payable';
   document.getElementById('lm-emp').innerHTML='<option value="">— Select employee —</option>'+DB.employees.map(e=>'<option value="'+e.id+'">'+e.name+'</option>').join('');
   document.getElementById('lm-date').value=now.toISOString().slice(0,10);
@@ -3309,17 +3310,22 @@ function openLedgerModal(){
 }
 
 function editLedger(id){
-  const l=DB.ledger.find(x=>x.id===id);if(!l)return;openLedgerModal();
-  document.getElementById('lm-id').value=l.id;document.getElementById('ledger-mt').textContent='Edit payable';
-  document.getElementById('lm-emp').value=l.employee_id;document.getElementById('lm-date').value=l.date||'';
-  document.getElementById('lm-type').value=l.type;document.getElementById('lm-desc').value=l.description;
-  document.getElementById('lm-ref').value=l.reference||'';document.getElementById('lm-amount').value=l.original_amount;
+  const l=DB.ledger.find(x=>x.id===id);if(!l)return;
+  openLedgerModal(); // this clears attachments - we restore them below
+  document.getElementById('lm-id').value=l.id;
+  document.getElementById('ledger-mt').textContent='Edit payable';
+  document.getElementById('lm-emp').value=l.employee_id;
+  document.getElementById('lm-date').value=l.date||'';
+  document.getElementById('lm-type').value=l.type;
+  document.getElementById('lm-desc').value=l.description;
+  document.getElementById('lm-ref').value=l.reference||'';
+  document.getElementById('lm-amount').value=l.original_amount;
   document.getElementById('lm-emi').value=l.emi||0;
   document.getElementById('lm-start-month').value=l.start_month||now.getMonth()+1;
   document.getElementById('lm-start-year').value=l.start_year||now.getFullYear();
-  // Restore attachments
+  // Restore attachments AFTER modal is open and DOM is ready
   _ledgerAttachments = l.attachments ? [...l.attachments] : [];
-  renderLedgerAttachList();
+  setTimeout(()=>renderLedgerAttachList(), 50);
 }
 
 function saveLedgerEntry(){
