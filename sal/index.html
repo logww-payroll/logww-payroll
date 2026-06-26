@@ -251,7 +251,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
   <div id="run-notice" class="notice info"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg><span>Trip commissions and deductions are pulled automatically from the Trip Log and Deductions pages for the selected period.</span></div>
   <div class="tw" id="run-tw"></div>
   <div class="btn-row" style="margin-top:1rem">
-    <button class="btn pri" onclick="savePayroll()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Save payroll</button>
+    <button class="btn pri" onclick="savePayroll()" id="save-payroll-btn"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Save payroll</button>
     <button class="btn" onclick="previewAll()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Preview slips</button>
     <button class="btn" onclick="sendRunSlipsForCurrentMonth()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Send slips</button>
     <button class="btn" onclick="exportCSV()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export CSV</button>
@@ -1012,6 +1012,18 @@ function buildRunTable(){
     document.getElementById('run-tw').innerHTML='<div class="empty" style="padding:2rem">Loading employee data... If this persists, check your Supabase connection in Settings.</div>';
     return;
   }
+  // Check if this run is locked (paid)
+  const existRun2=DB.runs.find(r=>r.period_month===m&&r.period_year===y);
+  const isLocked = existRun2&&existRun2.status==='paid';
+  if(isLocked){
+    document.getElementById('run-notice').innerHTML='<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" style="color:var(--green-text);flex-shrink:0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><span style="color:var(--green-text)"><strong>This run is marked as paid and locked.</strong> To make changes, go to History and unmark it first.</span>';
+    document.getElementById('run-notice').style.background='var(--green-bg)';
+    document.getElementById('run-notice').style.borderColor='var(--green-bd)';
+  } else {
+    document.getElementById('run-notice').innerHTML='<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg><span>Trip commissions and deductions are pulled automatically from the Trip Log and Deductions pages for the selected period.</span>';
+    document.getElementById('run-notice').style.background='var(--blue-bg)';
+    document.getElementById('run-notice').style.borderColor='var(--blue-bd)';
+  }
   const existRun=DB.runs.find(r=>r.period_month===m&&r.period_year===y);
   const existLines=existRun?DB.lines.filter(l=>l.run_id===existRun.id):[];
   runOverrides={};
@@ -1108,6 +1120,12 @@ function updateTot(){
 
 async function savePayroll(){
   const m=getM('run-month'),y=getY('run-year');
+  // Check if this run is locked
+  const existingRun=DB.runs.find(r=>r.period_month===m&&r.period_year===y);
+  if(existingRun&&existingRun.status==='paid'){
+    toast('Run is locked',`${MONTHS[m-1]} ${y} is marked as paid. Go to History to unlock it first.`,'warn');
+    return;
+  }
   // Guard: if runOverrides is empty, rebuild the table first
   if(!Object.keys(runOverrides).length){
     buildRunTable();
@@ -1269,8 +1287,22 @@ function renderHistory(){
   document.getElementById('history-list').innerHTML=sorted.map(r=>`
     <div class="hc">
       <div class="hh" onclick="toggleH('${r.id}')">
-        <div><div style="font-weight:600">${MONTHS[r.period_month-1]} ${r.period_year}</div><div style="font-size:12px;color:var(--text-2);margin-top:2px">${r.employee_count} employees · ${aed(r.total_net)} net</div></div>
-        <div style="display:flex;gap:8px"><button class="btn xs" onclick="event.stopPropagation();viewRun('${r.id}')">View slips</button><button class="btn xs" onclick="event.stopPropagation();sendRunSlips('${r.id}')">Send emails</button><button class="btn xs" onclick="event.stopPropagation();exportRunCSV('${r.id}')">Export CSV</button><button class="btn xs dan" onclick="event.stopPropagation();delRun('${r.id}')">Delete</button></div>
+        <div><div style="display:flex;align-items:center;gap:8px">
+            <div style="font-weight:600">${MONTHS[r.period_month-1]} ${r.period_year}</div>
+            ${r.status==='paid'?'<span class="badge" style="background:var(--green-bg);color:var(--green-text)">Paid</span>':''}
+          </div>
+          <div style="font-size:12px;color:var(--text-2);margin-top:2px">${r.employee_count} employees · ${aed(r.total_net)} net${r.paid_date?' · Paid '+r.paid_date:''}</div></div>
+        <div style="display:flex;gap:8px"><button class="btn xs" onclick="event.stopPropagation();viewRun('${r.id}')">View slips</button>
+        <button class="btn xs" onclick="event.stopPropagation();sendRunSlips('${r.id}')">Send emails</button>
+        <button class="btn xs" onclick="event.stopPropagation();exportRunCSV('${r.id}')">Export CSV</button>
+        ${r.status==='paid'
+          ?'<span class="badge" style="background:var(--green-bg);color:var(--green-text);padding:4px 10px">✓ Paid</span>'
+          :`<button class="btn xs" style="color:var(--green-text);border-color:var(--green-bd)" onclick="event.stopPropagation();markRunPaid('${r.id}')">Mark paid</button>`
+        }
+        ${r.status==='paid'
+          ?`<button class="btn xs" onclick="event.stopPropagation();unmarkRunPaid('${r.id}')" style="color:var(--amber-text);border-color:var(--amber-bd)">Unlock</button>`
+          :`<button class="btn xs dan" onclick="event.stopPropagation();delRun('${r.id}')">Delete</button>`
+        }</div>
       </div>
       <div class="hb" id="hb-${r.id}">
         <div class="tw" style="margin-top:12px"><table><thead><tr><th>Employee</th><th>Days</th><th>Fixed</th><th>Trip comm</th><th>Other</th><th>Deductions</th><th style="text-align:right">Net</th></tr></thead>
@@ -2589,6 +2621,57 @@ function sendRunSlipsForCurrentMonth(){
     return;
   }
   sendRunSlips(run.id);
+}
+
+
+async function markRunPaid(runId){
+  const run = DB.runs.find(r=>r.id===runId);
+  if(!run) return;
+  const period = MONTHS[run.period_month-1]+' '+run.period_year;
+  if(!await showConfirm(
+    'Mark as paid',
+    `Mark ${period} payroll as paid?\n\nThis will lock the run to prevent accidental edits. You can still view slips and export CSV.`,
+    'Mark paid','btn pri','success'
+  )) return;
+
+  run.status = 'paid';
+  run.paid_date = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+
+  save();
+
+  // Update in Supabase
+  if(sbUrl&&sbKey){
+    let authToken=sbKey;
+    if(supabaseClient){try{const {data:{session}}=await supabaseClient.auth.getSession();if(session?.access_token)authToken=session.access_token;}catch(e){}}
+    const h={apikey:sbKey,Authorization:'Bearer '+authToken,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
+    fetch(`${sbUrl}/rest/v1/payroll_runs?id=eq.${runId}`,{
+      method:'PATCH',headers:h,
+      body:JSON.stringify({status:'paid',paid_date:run.paid_date})
+    }).catch(e=>console.error('Supabase update:',e));
+  }
+
+  toast('Marked as paid',`${period} payroll locked.`,'success',3000);
+  renderHistory();
+}
+
+
+function unmarkRunPaid(runId){
+  const run=DB.runs.find(r=>r.id===runId);if(!run)return;
+  run.status=''; run.paid_date='';
+  save();
+  if(sbUrl&&sbKey){
+    let authToken=sbKey;
+    if(supabaseClient){supabaseClient.auth.getSession().then(({data:{session}})=>{
+      if(session?.access_token)authToken=session.access_token;
+      fetch(`${sbUrl}/rest/v1/payroll_runs?id=eq.${runId}`,{
+        method:'PATCH',
+        headers:{apikey:sbKey,Authorization:'Bearer '+authToken,'Content-Type':'application/json'},
+        body:JSON.stringify({status:null,paid_date:null})
+      }).catch(()=>{});
+    });}
+  }
+  toast('Unlocked',`${MONTHS[run.period_month-1]} ${run.period_year} payroll unlocked.`,'info',3000);
+  renderHistory();
 }
 
 /* ─── EMAIL SENDING ─── */
