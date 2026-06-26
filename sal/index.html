@@ -1331,15 +1331,21 @@ function renderHistory(){
         }</div>
       </div>
       <div class="hb" id="hb-${r.id}">
-        <div class="tw" style="margin-top:12px"><table><thead><tr><th>Employee</th><th>Days</th><th>Fixed</th><th>Trip comm</th><th>Deductions</th><th style="text-align:right">Net</th></tr></thead>
-        <tbody>${DB.lines.filter(l=>l.run_id===r.id).map(L=>`<tr>
+        <div class="tw" style="margin-top:12px"><table><thead><tr><th>Employee</th><th>Days</th><th>Fixed</th><th>Trip comm</th>${DB.earnTypes.filter(et=>et.active).map(et=>`<th>${et.label}</th>`).join('')}<th>Deductions</th><th style="text-align:right">Net</th></tr></thead>
+        <tbody>${DB.lines.filter(l=>l.run_id===r.id).map(L=>{
+          const customEarns=DB.earnTypes.filter(et=>et.active).map(et=>{
+            const c=DB.customEarns.find(x=>x.emp_id===L.employee_id&&x.earn_type_id===et.id&&x.month===r.period_month&&x.year===r.period_year);
+            return c&&c.amount>0?num(c.amount):'—';
+          });
+          return `<tr>
           <td style="font-weight:500;font-size:12px">${L.employee_name}</td>
           <td>${L.worked_days}/${L.total_days}</td>
           <td>${num(L.total_fixed)}</td>
           <td>${num(L.trip_commission||0)}</td>
+          ${customEarns.map(v=>`<td>${v}</td>`).join('')}
           <td style="color:var(--red-text)">${L.advances>0?'('+num(L.advances)+')':'—'}</td>
           <td style="text-align:right;font-weight:600">${L.net_payable>0?aed(L.net_payable):'—'}</td>
-        </tr>`).join('')}</tbody></table></div>
+        </tr>`;}).join('')}</tbody></table></div>
       </div>
     </div>`).join('');
 }
