@@ -2037,13 +2037,16 @@ async function syncFromSupabase(){
   try{
     document.getElementById('conn-lbl').textContent='Syncing...';
 
-    // Pull core tables
-    const [empR,runsR,linesR,tripsR,dedsR] = await Promise.all([
+    // Pull all tables including ledger and recoveries
+    const [empR,runsR,linesR,tripsR,dedsR,ledgerR,recovR,ratesR] = await Promise.all([
       fetch(`${sbUrl}/rest/v1/employees?select=*&order=name`,{headers:h}),
       fetch(`${sbUrl}/rest/v1/payroll_runs?select=*&order=period_year.desc,period_month.desc`,{headers:h}),
       fetch(`${sbUrl}/rest/v1/payroll_lines?select=*`,{headers:h}),
       fetch(`${sbUrl}/rest/v1/trip_log?select=*`,{headers:h}),
       fetch(`${sbUrl}/rest/v1/deductions?select=*`,{headers:h}),
+      fetch(`${sbUrl}/rest/v1/employee_ledger?select=*`,{headers:h}),
+      fetch(`${sbUrl}/rest/v1/ledger_recoveries?select=*`,{headers:h}),
+      fetch(`${sbUrl}/rest/v1/commission_rates?select=*`,{headers:h}),
     ]);
 
     if(!empR.ok){
@@ -2059,12 +2062,15 @@ async function syncFromSupabase(){
       return;
     }
 
-    const [sbEmps, sbRuns, sbLines, sbTrips, sbDeds] = await Promise.all([
+    const [sbEmps, sbRuns, sbLines, sbTrips, sbDeds, sbLedger, sbRecov, sbRates2] = await Promise.all([
       empR.ok?empR.json():[],
       runsR.ok?runsR.json():[],
       linesR.ok?linesR.json():[],
       tripsR.ok?tripsR.json():[],
       dedsR.ok?dedsR.json():[],
+      ledgerR.ok?ledgerR.json():[],
+      recovR.ok?recovR.json():[],
+      ratesR.ok?ratesR.json():[],
     ]);
 
     // ── SMART MERGE: Supabase wins only if it has MORE data ──
