@@ -1101,7 +1101,10 @@ function renderRunRows(){
     const earnCells=earnCols.map(et=>{
       const c=DB.customEarns.find(x=>x.emp_id===e.id&&x.earn_type_id===et.id&&x.month===m&&x.year===y);
       const amt=c?c.amount:0;
-      return '<td><input class="ri" type="number" min="0" value="'+amt+'" style="width:80px" oninput="saveCustomEarn(''+e.id+'',''+et.id+'','+m+','+y+',parseFloat(this.value)||0,''+et.label+'',''+(et.recur||'recurring')+'');updCustomTotal(''+e.id+'','+m+','+y+')"></td>';
+      const eid=e.id,etid=et.id,elbl=et.label,erecur=et.recur||'recurring';
+      return `<td><input class="ri earn-input" type="number" min="0" value="${amt}" style="width:80px"
+        data-emp="${eid}" data-et="${etid}" data-label="${elbl}" data-recur="${erecur}" data-m="${m}" data-y="${y}"
+        oninput="saveCustomEarn(this.dataset.emp,this.dataset.et,+this.dataset.m,+this.dataset.y,parseFloat(this.value)||0,this.dataset.label,this.dataset.recur);updCustomTotal(this.dataset.emp,+this.dataset.m,+this.dataset.y)"></td>`;
     }).join('');
     return '<tr>'
       +'<td><div style="font-weight:500;font-size:12px">'+e.name+'</div><span class="badge '+(e.sheet==='Driver'?'b-dr':'b-st')+'" style="font-size:9px">'+e.sheet+'</span></td>'
