@@ -1878,7 +1878,7 @@ function renderImportPreview(){
   }
   if(d.trips.length){
     document.getElementById('imp-trips-card').style.display='block';
-    document.getElementById('imp-trips-tb').innerHTML=d.trips.map(t=>'<tr><td>'+(t.trip_date||'\u2014')+'</td><td style="font-size:12px">'+t.employee_name+'</td><td><span class="tag" style="background:var(--blue-bg);color:var(--blue-text)">'+(t.route||'\u2014')+'</span></td><td class="mono">'+(t.truck||'\u2014')+'</td><td style="font-weight:500">'+num(t.trip_comm)+'</td><td style="color:var(--text-2)">'+(t.border_exp>0?num(t.border_exp):'\u2014')+'</td><td style="color:var(--text-2)">'+(t.diesel_exp>0?num(t.diesel_exp):'\u2014')+'</td><td style="color:var(--text-2)">'+(t.other_exp>0?num(t.other_exp):'\u2014')+'</td><td style="font-weight:600">'+aed(t.total)+'</td></tr>').join('');
+    document.getElementById('imp-trips-tb').innerHTML=d.trips.map(t=>'<tr><td>'+fmtDate(t.trip_date)+'</td><td style="font-size:12px">'+t.employee_name+'</td><td><span class="tag" style="background:var(--blue-bg);color:var(--blue-text)">'+(t.route||'\u2014')+'</span></td><td class="mono">'+(t.truck||'\u2014')+'</td><td style="font-weight:500">'+num(t.trip_comm)+'</td><td style="color:var(--text-2)">'+(t.border_exp>0?num(t.border_exp):'\u2014')+'</td><td style="color:var(--text-2)">'+(t.diesel_exp>0?num(t.diesel_exp):'\u2014')+'</td><td style="color:var(--text-2)">'+(t.other_exp>0?num(t.other_exp):'\u2014')+'</td><td style="font-weight:600">'+aed(t.total)+'</td></tr>').join('');
   }
   if(d.deductions.length){
     document.getElementById('imp-deds-card').style.display='block';
