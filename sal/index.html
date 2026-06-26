@@ -2680,6 +2680,113 @@ function unmarkRunPaid(runId){
   renderHistory();
 }
 
+
+function printLedgerStatement(empId){
+  const emp = DB.employees.find(e=>e.id===empId);
+  if(!emp) return;
+  const entries = DB.ledger.filter(l=>l.employee_id===empId);
+  if(!entries.length){ toast('No entries','No payable entries for this employee.','info'); return; }
+  const co = DB.company;
+  const today = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+
+  const totalOrig = entries.reduce((s,l)=>s+l.original_amount,0);
+  const totalBal  = entries.reduce((s,l)=>s+(l.balance||0),0);
+  const totalRec  = totalOrig - totalBal;
+
+  const rows = entries.map(l=>{
+    const recs = DB.recoveries.filter(r=>r.ledger_id===l.id).sort((a,b)=>a.period_year-b.period_year||a.period_month-b.period_month);
+    const recTotal = recs.reduce((s,r)=>s+r.amount,0);
+    const recRows = recs.map(r=>`
+      <tr style="background:#fafafa">
+        <td style="padding:4px 8px;font-size:11px;color:#666;padding-left:24px">↳ Recovery — ${MONTHS[r.period_month-1]} ${r.period_year}</td>
+        <td></td><td></td><td></td>
+        <td style="padding:4px 8px;font-size:11px;color:#2d7a4f;text-align:right">${aed(r.amount)}</td>
+        <td></td>
+        <td style="padding:4px 8px;font-size:11px;color:#666">${r.notes||'—'}</td>
+      </tr>`).join('');
+    return `
+      <tr>
+        <td style="padding:7px 8px;font-size:12px">${l.date||'—'}</td>
+        <td style="padding:7px 8px;font-size:12px">${LEDGER_TYPES[l.type]||l.type}</td>
+        <td style="padding:7px 8px;font-size:12px">${l.description}</td>
+        <td style="padding:7px 8px;font-size:12px;text-align:right">${aed(l.original_amount)}</td>
+        <td style="padding:7px 8px;font-size:12px;text-align:right;color:#2d7a4f">${recTotal>0?aed(recTotal):'—'}</td>
+        <td style="padding:7px 8px;font-size:12px;text-align:right;font-weight:600;color:${(l.balance||0)<=0?'#666':'#c0392b'}">${(l.balance||0)<=0?'Cleared':aed(l.balance)}</td>
+        <td style="padding:7px 8px;font-size:12px">${l.emi>0?aed(l.emi)+'/mo':'—'}</td>
+      </tr>${recRows}`;
+  }).join('');
+
+  const win = window.open('','_blank','width=800,height=600');
+  win.document.write(`<!DOCTYPE html><html><head><title>Ledger Statement — ${emp.name}</title>
+  <style>
+    body{font-family:Arial,sans-serif;font-size:12px;color:#222;margin:0;padding:20px}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:12px;border-bottom:2px solid #222;margin-bottom:16px}
+    .co-name{font-size:16px;font-weight:700}
+    .co-addr{font-size:10px;color:#666;margin-top:2px}
+    .doc-title{font-size:13px;font-weight:700;text-align:right}
+    .doc-date{font-size:10px;color:#666;text-align:right;margin-top:2px}
+    .emp-box{background:#f5f5f5;border-radius:4px;padding:10px 14px;margin-bottom:16px;display:flex;gap:32px}
+    .ef label{font-size:10px;color:#666;display:block;margin-bottom:2px}
+    .ef span{font-size:12px;font-weight:600}
+    table{width:100%;border-collapse:collapse;margin-bottom:16px}
+    thead th{text-align:left;padding:7px 8px;font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:#555;background:#f0f0f0;border-bottom:1px solid #ddd}
+    tbody tr{border-bottom:1px solid #eee}
+    tbody tr:last-child{border:none}
+    .summary{display:flex;gap:24px;background:#f9f9f9;border:1px solid #eee;border-radius:4px;padding:12px 16px;margin-bottom:20px}
+    .sf label{font-size:10px;color:#666;display:block;margin-bottom:3px}
+    .sf span{font-size:14px;font-weight:700}
+    .footer{font-size:10px;color:#999;border-top:1px solid #eee;padding-top:10px;margin-top:20px}
+    @media print{body{padding:10px}.no-print{display:none}}
+  </style>
+  </head><body>
+  <div class="header">
+    <div>
+      <div class="co-name">${co.name.toUpperCase()}</div>
+      <div class="co-addr">${co.addr}</div>
+    </div>
+    <div>
+      <div class="doc-title">EMPLOYEE LEDGER STATEMENT</div>
+      <div class="doc-date">Printed: ${today}</div>
+    </div>
+  </div>
+
+  <div class="emp-box">
+    <div class="ef"><label>Employee</label><span>${emp.name}</span></div>
+    <div class="ef"><label>Designation</label><span>${emp.designation||'—'}</span></div>
+    <div class="ef"><label>Work Permit</label><span style="font-family:monospace">${emp.work_permit||'—'}</span></div>
+    <div class="ef"><label>Labor Card</label><span style="font-family:monospace">${emp.labor_card||'—'}</span></div>
+  </div>
+
+  <div class="summary">
+    <div class="sf"><label>Total recorded</label><span>${aed(totalOrig)}</span></div>
+    <div class="sf"><label>Total recovered</label><span style="color:#2d7a4f">${aed(totalRec)}</span></div>
+    <div class="sf"><label>Outstanding balance</label><span style="color:${totalBal>0?'#c0392b':'#2d7a4f'}">${totalBal>0?aed(totalBal):'Fully cleared'}</span></div>
+    <div class="sf"><label>Active payables</label><span>${entries.filter(l=>(l.balance||0)>0).length}</span></div>
+  </div>
+
+  <table>
+    <thead><tr>
+      <th>Date</th><th>Type</th><th>Description</th>
+      <th style="text-align:right">Original</th>
+      <th style="text-align:right">Recovered</th>
+      <th style="text-align:right">Balance</th>
+      <th>EMI/mo</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+
+  <div class="footer">
+    This is a system-generated statement from ${co.name} payroll system. Generated on ${today}.
+  </div>
+
+  <div class="no-print" style="margin-top:20px;text-align:center">
+    <button onclick="window.print()" style="padding:8px 24px;background:#1A1A18;color:#fff;border:none;border-radius:4px;font-size:13px;cursor:pointer">Print / Save as PDF</button>
+    <button onclick="window.close()" style="padding:8px 16px;background:#fff;border:1px solid #ddd;border-radius:4px;font-size:13px;cursor:pointer;margin-left:8px">Close</button>
+  </div>
+  </body></html>`);
+  win.document.close();
+}
+
 /* ─── EMAIL SENDING ─── */
 async function sendSlipsForRun(run, lines, period){
   const withEmail=lines.filter(L=>{const e=DB.employees.find(x=>x.id===L.employee_id);return e&&e.email&&e.email.includes('@');});
@@ -2870,6 +2977,10 @@ function renderLedger(){
             <span>Outstanding: <strong style="color:var(--red-text)">${aed(empBal)}</strong></span>
             <span>Recovered: <strong style="color:var(--green-text)">${aed(rec)}</strong></span>
             <span style="color:var(--text-3)">${pct}% cleared</span>
+            <button class="btn xs" onclick="printLedgerStatement('${d.emp.id}')" style="margin-left:8px">
+              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              Print statement
+            </button>
           </div>
         </div>
         <div class="tw" style="border:none;border-radius:0">
