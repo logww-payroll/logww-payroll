@@ -2283,7 +2283,7 @@ function totalCustomEarns(empId, month, year){
 
 
 function buildEarnRows(empId, m, y){
-  const earns = getCustomEarns(empId, m, y);
+  const earns = getCustomEarns(empId, m, y).filter(c=>(parseFloat(c.amount)||0)>0);
   if(!earns.length) return '';
   return earns.map(c=>`
     <tr style="background:var(--bg)">
