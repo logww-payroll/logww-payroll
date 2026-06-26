@@ -3083,7 +3083,7 @@ async function sendSlipsForRun(run, lines, period){
       const htmlBody=buildEmailHtml(e,{...L,period_month:run.period_month,period_year:run.period_year},period);
       const res=await fetch(EDGE_FN,{
         method:'POST',
-        headers:{'Content-Type':'application/json','apikey':sbKey},
+        headers:{'Content-Type':'application/json'},
         body:JSON.stringify({to_email:e.email,to_name:e.name,subject:`Salary Slip — ${e.name} — ${period}`,html_body:htmlBody}),
       });
       const data=await res.json();
