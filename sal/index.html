@@ -1193,12 +1193,17 @@ function buildSlip(e,L,period){
   const trip=parseFloat(L.trip_commission)||0;
   const other=parseFloat(L.other_commission)||0;
   const adv=parseFloat(L.advances)||0;
+  const m=L.period_month,y=L.period_year;
+  // Custom earnings (attendance allowance, adhoc, etc.)
+  const empId=e.id||L.employee_id;
+  const customEarnsList = m&&y&&empId ? getCustomEarns(empId,m,y).filter(c=>(parseFloat(c.amount)||0)>0) : [];
+  const customTotal = customEarnsList.reduce((s,c)=>s+(parseFloat(c.amount)||0),0);
+  // Net from saved data or recalculate
   const net=parseFloat(L.net_payable)||calcNet(L);
   const grand=net>0?net+wps+vat:0;
-  const m=L.period_month,y=L.period_year;
   // Get detailed trip lines and ded lines for memo
-  const tripLines=m&&y?DB.trips.filter(t=>t.period_month===m&&t.period_year===y&&t.employee_id===(e.id||L.employee_id)):[];
-  const dedLines=m&&y?DB.deds.filter(d=>d.period_month===m&&d.period_year===y&&d.employee_id===(e.id||L.employee_id)):[];
+  const tripLines=m&&y?DB.trips.filter(t=>t.period_month===m&&t.period_year===y&&t.employee_id===empId):[];
+  const dedLines=m&&y?DB.deds.filter(d=>d.period_month===m&&d.period_year===y&&d.employee_id===empId):[];
   return `<div class="slip">
     <div class="slip-hd">
       <div><div class="slip-co">${co.name}</div><div class="slip-addr">${co.addr}</div></div>
@@ -1219,16 +1224,11 @@ function buildSlip(e,L,period){
     <div class="slip-sec">Section B — Variable earnings</div>
     <div class="sr"><span>Trip commissions</span><span>${num(trip)}</span></div>
     ${other>0?`<div class="sr"><span>Attendance allowance</span><span>${num(other)}</span></div>`:''}
-    ${(()=>{
-      const pm=L.period_month||(getM&&getM('run-month'))||now.getMonth()+1;
-      const py=L.period_year||(getY&&getY('run-year'))||now.getFullYear();
-      const earns=e.id?getCustomEarns(e.id,pm,py).filter(c=>c.amount>0):[];
-      return earns.map(c=>`<div class="sr"><span>${c.label}</span><span>${num(c.amount)}</span></div>`).join('');
-    })()}
-    <div class="sr tot"><span>Total variable</span><span>${num(trip+other+(L.custom_earnings||0))}</span></div>
+    ${customEarnsList.map(c=>`<div class="sr"><span>${c.label}</span><span>${num(c.amount)}</span></div>`).join('')}
+    <div class="sr tot"><span>Total variable</span><span>${num(trip+other+customTotal)}</span></div>
     ${adv>0?`<div class="slip-sec">Section C — Deductions</div>${dedLines.length?dedLines.map(d=>`<div class="sr neg"><span>${catLabel(d.category)}: ${d.description}${d.reference?' ['+d.reference+']':''}</span><span>(${num(d.amount)})</span></div>`).join(''):`<div class="sr neg"><span>${L.deduction_notes||'Advances / deductions'}</span><span>(${num(adv)})</span></div>`}<div class="sr tot neg"><span>Total deductions</span><span>(${num(adv)})</span></div>`:''}
     <div class="slip-sec">Summary</div>
-    <div class="sr"><span>Total earnings (A + B)</span><span>${num(basic+trip+other)}</span></div>
+    <div class="sr"><span>Total earnings (A + B)</span><span>${num(basic+trip+other+customTotal)}</span></div>
     ${adv>0?`<div class="sr neg"><span>Less: deductions</span><span>(${num(adv)})</span></div>`:''}
     <div class="sr"><span>WPS commission</span><span>${num(wps)}</span></div>
     <div class="sr"><span>VAT</span><span>${num(vat)}</span></div>
