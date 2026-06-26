@@ -1188,17 +1188,25 @@ async function savePayroll(){
   const period = `${MONTHS[m-1]} ${y}`;
   const summary = `Payroll for ${period} saved.\n${run.employee_count} employees · ${aed(run.total_net)} net payable.`;
 
-  // Push to Supabase and confirm
+  // Show saving indicator immediately
+  const savingToast = document.createElement('div');
+  savingToast.className='toast info';
+  savingToast.innerHTML='<span class="toast-icon">⏳</span><div class="toast-body"><div class="toast-title">Saving payroll...</div><div class="toast-msg">Pushing data to Supabase</div></div>';
+  document.getElementById('toast-container').appendChild(savingToast);
+
   if(sbUrl&&sbKey){
     try{
       await pushSB(run,lines);
-      toast('Payroll saved & synced',`${run.employee_count} employees · ${aed(run.total_net)} net · Saved to Supabase ✓`,'success',5000);
+      savingToast.remove();
+      toast('✓ Payroll saved',`${MONTHS[m-1]} ${y} · ${run.employee_count} employees · ${aed(run.total_net)} net · Synced to database`,'success',6000);
     }catch(e){
       console.error('Supabase push failed:',e);
-      toast('Saved locally',`${run.employee_count} employees · ${aed(run.total_net)} net · Could not sync to Supabase — try Push all in Settings`,'warn',7000);
+      savingToast.remove();
+      toast('✗ Save failed','Could not reach Supabase. Check your connection and try again.','error',8000);
     }
   } else {
-    toast('Payroll saved',`${run.employee_count} employees · ${aed(run.total_net)} net payable.`,'success',5000);
+    savingToast.remove();
+    toast('Not connected','Configure Supabase in Settings to save payroll data.','warn',5000);
   }
 }
 
