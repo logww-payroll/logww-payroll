@@ -1048,7 +1048,7 @@ function buildRunTable(){
     const totalDed = autoDed + ledgerEMI;
     const allDedNotes = [dedNotes, ledgerNotes].filter(Boolean).join('; ');
 
-    runOverrides[e.id]=ex?{...ex}:{
+    runOverrides[e.id]=ex?{...ex,other_commission:0}:{
       employee_id:e.id,employee_name:e.name,
       total_days:30,worked_days:e.basic_salary>0?30:0,
       basic_salary:e.basic_salary,
@@ -1057,7 +1057,7 @@ function buildRunTable(){
     };
   });
   document.getElementById('run-tw').innerHTML=`<table>
-    <thead><tr><th style="min-width:160px">Employee</th><th>Days</th><th>Basic (auto)</th><th>Trip comm<br><span style="font-weight:400;font-size:10px">from trip log</span></th><th>Attendance allowance</th><th>Deductions<br><span style="font-weight:400;font-size:10px">from deductions</span></th><th>Notes</th><th style="text-align:right">Net payable</th><th></th></tr></thead>
+    <thead><tr><th style="min-width:160px">Employee</th><th>Days</th><th>Basic (auto)</th><th>Trip comm<br><span style="font-weight:400;font-size:10px">from trip log</span></th><th>Deductions<br><span style="font-weight:400;font-size:10px">from deductions</span></th><th>Notes</th><th style="text-align:right">Net payable</th><th></th></tr></thead>
     <tbody id="run-tb"></tbody>
     <tfoot><tr style="background:var(--bg)"><td colspan="7" style="padding:9px 12px;font-weight:600;font-size:12px;color:var(--text-2)">Total</td><td style="padding:9px 12px;text-align:right;font-weight:600" id="run-tot">—</td><td></td></tr></tfoot>
   </table>`;
@@ -1081,7 +1081,7 @@ function renderRunRows(){
         <input class="ri" type="number" min="0" value="${L.trip_commission||0}" style="width:90px;${hasAutoTrip?'border-color:var(--green-bd);background:#F8FFF8':''}" oninput="updR('${e.id}','trip_commission',this.value)">
         ${hasAutoTrip?`<div style="font-size:10px;color:var(--green-text);margin-top:2px">auto from trips</div>`:''}
       </td>
-      <td><input class="ri" type="number" min="0" value="${L.other_commission||0}" style="width:80px" title="Attendance allowance" oninput="updR('${e.id}','other_commission',this.value)"></td>
+
       <td>
         <input class="ri" type="number" min="0" value="${L.advances||0}" style="width:80px;${hasAutoDed?'border-color:var(--red-bd);background:#FFF8F8':''}" oninput="updR('${e.id}','advances',this.value)">
         ${hasAutoDed?`<div style="font-size:10px;color:var(--red-text);margin-top:2px">auto from deds</div>`:''}
@@ -1218,7 +1218,7 @@ function buildSlip(e,L,period){
     <div class="sr tot"><span>Total fixed</span><span>${num(basic)}</span></div>
     <div class="slip-sec">Section B — Variable earnings</div>
     <div class="sr"><span>Trip commissions</span><span>${num(trip)}</span></div>
-    <div class="sr"><span>Attendance allowance</span><span>${num(other)}</span></div>
+    ${other>0?`<div class="sr"><span>Attendance allowance</span><span>${num(other)}</span></div>`:''}
     ${(()=>{
       const pm=L.period_month||(getM&&getM('run-month'))||now.getMonth()+1;
       const py=L.period_year||(getY&&getY('run-year'))||now.getFullYear();
@@ -1305,13 +1305,12 @@ function renderHistory(){
         }</div>
       </div>
       <div class="hb" id="hb-${r.id}">
-        <div class="tw" style="margin-top:12px"><table><thead><tr><th>Employee</th><th>Days</th><th>Fixed</th><th>Trip comm</th><th>Other</th><th>Deductions</th><th style="text-align:right">Net</th></tr></thead>
+        <div class="tw" style="margin-top:12px"><table><thead><tr><th>Employee</th><th>Days</th><th>Fixed</th><th>Trip comm</th><th>Deductions</th><th style="text-align:right">Net</th></tr></thead>
         <tbody>${DB.lines.filter(l=>l.run_id===r.id).map(L=>`<tr>
           <td style="font-weight:500;font-size:12px">${L.employee_name}</td>
           <td>${L.worked_days}/${L.total_days}</td>
           <td>${num(L.total_fixed)}</td>
           <td>${num(L.trip_commission||0)}</td>
-          <td>${num(L.other_commission||0)}</td>
           <td style="color:var(--red-text)">${L.advances>0?'('+num(L.advances)+')':'—'}</td>
           <td style="text-align:right;font-weight:600">${L.net_payable>0?aed(L.net_payable):'—'}</td>
         </tr>`).join('')}</tbody></table></div>
