@@ -1197,7 +1197,18 @@ async function savePayroll(){
   const period = `${MONTHS[m-1]} ${y}`;
   const summary = `Payroll for ${period} saved.\n${run.employee_count} employees · ${aed(run.total_net)} net payable.`;
 
-  toast('Payroll saved',`${run.employee_count} employees · ${aed(run.total_net)} net payable. Go to History to view or send slips.`,'success',5000);
+  // Push to Supabase and confirm
+  if(sbUrl&&sbKey){
+    try{
+      await pushSB(run,lines);
+      toast('Payroll saved & synced',`${run.employee_count} employees · ${aed(run.total_net)} net · Saved to Supabase ✓`,'success',5000);
+    }catch(e){
+      console.error('Supabase push failed:',e);
+      toast('Saved locally',`${run.employee_count} employees · ${aed(run.total_net)} net · Could not sync to Supabase — try Push all in Settings`,'warn',7000);
+    }
+  } else {
+    toast('Payroll saved',`${run.employee_count} employees · ${aed(run.total_net)} net payable.`,'success',5000);
+  }
 }
 
 /* ─── SLIPS ─── */
