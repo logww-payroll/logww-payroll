@@ -1106,17 +1106,21 @@ function renderRunRows(){
         data-emp="${eid}" data-et="${etid}" data-label="${elbl}" data-recur="${erecur}" data-m="${m}" data-y="${y}"
         oninput="saveCustomEarn(this.dataset.emp,this.dataset.et,+this.dataset.m,+this.dataset.y,parseFloat(this.value)||0,this.dataset.label,this.dataset.recur);updCustomTotal(this.dataset.emp,+this.dataset.m,+this.dataset.y)"></td>`;
     }).join('');
-    return '<tr>'
-      +'<td><div style="font-weight:500;font-size:12px">'+e.name+'</div><span class="badge '+(e.sheet==='Driver'?'b-dr':'b-st')+'" style="font-size:9px">'+e.sheet+'</span></td>'
-      +'<td><input class="ri" type="number" min="0" max="31" value="'+L.worked_days+'" style="width:50px" oninput="updR(''+e.id+'','worked_days',this.value)"></td>'
-      +'<td style="font-size:12px;color:var(--text-2)">'+num(calcBasic(L))+'</td>'
-      +'<td><input class="ri" type="number" min="0" value="'+(L.trip_commission||0)+'" style="width:85px;'+(hasAutoTrip?'border-color:var(--green-bd);background:#F8FFF8':'')+'" oninput="updR(''+e.id+'','trip_commission',this.value)"></td>'
-      +earnCells
-      +'<td><input class="ri" type="number" min="0" value="'+(L.advances||0)+'" style="width:80px;color:var(--red-text)" oninput="updR(''+e.id+'','advances',this.value)"></td>'
-      +'<td style="font-size:11px;color:var(--text-2);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+dedDetail+'">'+( dedDetail||'—')+'</td>'
-      +'<td style="text-align:right;font-weight:600;font-size:12px" id="net-'+e.id+'">'+(net>0?aed(net):'—')+'</td>'
-      +'<td><button class="btn xs" onclick="previewSlip(''+e.id+'')">Preview</button></td>'
-      +'</tr>';
+    const eid=e.id;
+    return `<tr>
+      <td><div style="font-weight:500;font-size:12px">${e.name}</div><span class="badge ${e.sheet==='Driver'?'b-dr':'b-st'}" style="font-size:9px">${e.sheet}</span></td>
+      <td><input class="ri" type="number" min="0" max="31" value="${L.worked_days}" style="width:50px"
+        data-id="${eid}" data-f="worked_days" oninput="updR(this.dataset.id,this.dataset.f,this.value)"></td>
+      <td style="font-size:12px;color:var(--text-2)">${num(calcBasic(L))}</td>
+      <td><input class="ri" type="number" min="0" value="${L.trip_commission||0}" style="width:85px;${hasAutoTrip?'border-color:var(--green-bd);background:#F8FFF8':''}"
+        data-id="${eid}" data-f="trip_commission" oninput="updR(this.dataset.id,this.dataset.f,this.value)"></td>
+      ${earnCells}
+      <td><input class="ri" type="number" min="0" value="${L.advances||0}" style="width:80px;color:var(--red-text)"
+        data-id="${eid}" data-f="advances" oninput="updR(this.dataset.id,this.dataset.f,this.value)"></td>
+      <td style="font-size:11px;color:var(--text-2);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${dedDetail}">${dedDetail||'—'}</td>
+      <td style="text-align:right;font-weight:600;font-size:12px" id="net-${eid}">${net>0?aed(net):'—'}</td>
+      <td><button class="btn xs" data-id="${eid}" onclick="previewSlip(this.dataset.id)">Preview</button></td>
+    </tr>`;
   }).join('');
   updateTot();
 }
