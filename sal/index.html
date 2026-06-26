@@ -1053,12 +1053,19 @@ function buildRunTable(){
     const totalDed = autoDed + ledgerEMI;
     const allDedNotes = [dedNotes, ledgerNotes].filter(Boolean).join('; ');
 
-    runOverrides[e.id]=ex?{...ex,other_commission:0}:{
-      employee_id:e.id,employee_name:e.name,
-      total_days:30,worked_days:e.basic_salary>0?30:0,
+    runOverrides[e.id]={
+      // Start with saved data if exists (preserves manual edits like days worked)
+      ...(ex||{}),
+      // Always recalculate these from live data
+      employee_id:e.id, employee_name:e.name,
       basic_salary:e.basic_salary,
-      trip_commission:autoTrip,other_commission:0,
-      advances:totalDed,deduction_notes:allDedNotes,
+      other_commission:0,
+      trip_commission:autoTrip,       // fresh from trip log
+      advances:totalDed,              // fresh from deductions + ledger EMI
+      deduction_notes:allDedNotes,    // fresh notes
+      // Keep manual overrides for days if already saved
+      total_days:ex?.total_days||30,
+      worked_days:ex?.worked_days||(e.basic_salary>0?30:0),
     };
   });
   document.getElementById('run-tw').innerHTML=`<table>
