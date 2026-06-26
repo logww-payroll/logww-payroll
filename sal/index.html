@@ -3296,7 +3296,7 @@ function updateLedgerEmiPreview(){
 function openLedgerModal(){
   clearLedgerAttachments();
   document.getElementById('lm-id').value='';document.getElementById('ledger-mt').textContent='Add payable';
-  document.getElementById('lm-emp').innerHTML=DB.employees.map(e=>'<option value="'+e.id+'">'+e.name+'</option>').join('');
+  document.getElementById('lm-emp').innerHTML='<option value="">— Select employee —</option>'+DB.employees.map(e=>'<option value="'+e.id+'">'+e.name+'</option>').join('');
   document.getElementById('lm-date').value=now.toISOString().slice(0,10);
   document.getElementById('lm-type').value='advance';
   ['lm-desc','lm-ref','lm-amount','lm-emi'].forEach(id=>document.getElementById(id).value='');
@@ -3324,7 +3324,9 @@ function editLedger(id){
 
 function saveLedgerEntry(){
   const id=document.getElementById('lm-id').value;
-  const empId=document.getElementById('lm-emp').value;const emp=DB.employees.find(e=>e.id===empId);
+  const empId=document.getElementById('lm-emp').value;
+  if(!empId){toast('Employee required','Please select an employee.','warn');return;}
+  const emp=DB.employees.find(e=>e.id===empId);
   const origAmt=parseFloat(document.getElementById('lm-amount').value)||0;
   const type=document.getElementById('lm-type').value;
   if(!origAmt){toast('Amount required','Please enter the total payable amount.','warn');return;}
