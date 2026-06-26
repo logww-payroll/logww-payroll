@@ -1080,29 +1080,40 @@ function renderRunRows(){
   const tb=document.getElementById('run-tb');if(!tb)return;
   const m=document.getElementById('run-month')?getM('run-month'):now.getMonth()+1;
   const y=document.getElementById('run-year')?getY('run-year'):now.getFullYear();
+  const earnCols=DB.earnTypes.filter(et=>et.active);
   tb.innerHTML=DB.employees.map(e=>{
     const L=runOverrides[e.id];if(!L)return '';
     const net=calcNet(L,m,y);
     const hasAutoTrip=DB.trips.some(t=>t.period_month===m&&t.period_year===y&&(t.employee_id===e.id||(t.employee_id===''&&t.employee_name===e.name)));
-    const hasAutoDed=DB.deds.some(d=>d.period_month===m&&d.period_year===y&&(d.employee_id===e.id||(d.employee_id===''&&d.employee_name===e.name)));
-    return `<tr>
-      <td><div style="font-weight:500;font-size:12px">${e.name}</div><span class="badge ${e.sheet==='Driver'?'b-dr':'b-st'}" style="margin-top:3px">${e.sheet}</span></td>
-      <td><input class="ri" type="number" min="0" max="31" value="${L.worked_days}" style="width:55px" oninput="updR('${e.id}','worked_days',this.value)"></td>
-      <td style="font-size:12px;color:var(--text-2)">${num(calcBasic(L))}</td>
-      <td>
-        <input class="ri" type="number" min="0" value="${L.trip_commission||0}" style="width:90px;${hasAutoTrip?'border-color:var(--green-bd);background:#F8FFF8':''}" oninput="updR('${e.id}','trip_commission',this.value)">
-        ${hasAutoTrip?`<div style="font-size:10px;color:var(--green-text);margin-top:2px">auto from trips</div>`:''}
-      </td>
-
-      <td>
-        <input class="ri" type="number" min="0" value="${L.advances||0}" style="width:80px;${hasAutoDed?'border-color:var(--red-bd);background:#FFF8F8':''}" oninput="updR('${e.id}','advances',this.value)">
-        ${hasAutoDed?`<div style="font-size:10px;color:var(--red-text);margin-top:2px">auto from deds</div>`:''}
-      </td>
-      <td style="max-width:140px"><input class="ri" type="text" value="${L.deduction_notes||''}" style="font-size:11px" oninput="updR('${e.id}','deduction_notes',this.value)"></td>
-      <td style="text-align:right;font-weight:600;font-size:12px" id="net-${e.id}">${net>0?aed(net):'—'}</td>
-      <td><button class="btn xs" onclick="previewSlip('${e.id}')">Preview</button></td>
-    </tr>
-    ${buildEarnRows(e.id, m, y)}`;
+    // Deduction detail from deds page + ledger EMI
+    const empDeds=DB.deds.filter(d=>d.period_month===m&&d.period_year===y&&(d.employee_id===e.id||(d.employee_id===''&&d.employee_name===e.name)));
+    const empLedger=DB.ledger.filter(l=>l.employee_id===e.id&&(l.balance||0)>0);
+    const dedParts=[
+      ...empDeds.map(d=>catLabel(d.category)+': '+d.description+' ('+num(d.amount)+')'),
+      ...empLedger.map(l=>{
+        const rec=DB.recoveries.find(r=>r.ledger_id===l.id&&r.period_month===m&&r.period_year===y);
+        const amt=rec?rec.amount:Math.min(l.emi||0,l.balance||0);
+        return amt>0?(l.type_label||l.type)+': '+l.description+' ('+num(amt)+')':null;
+      }).filter(Boolean)
+    ];
+    const dedDetail=dedParts.join(' · ');
+    // Earn type cells inline
+    const earnCells=earnCols.map(et=>{
+      const c=DB.customEarns.find(x=>x.emp_id===e.id&&x.earn_type_id===et.id&&x.month===m&&x.year===y);
+      const amt=c?c.amount:0;
+      return '<td><input class="ri" type="number" min="0" value="'+amt+'" style="width:80px" oninput="saveCustomEarn(''+e.id+'',''+et.id+'','+m+','+y+',parseFloat(this.value)||0,''+et.label+'',''+(et.recur||'recurring')+'');updCustomTotal(''+e.id+'','+m+','+y+')"></td>';
+    }).join('');
+    return '<tr>'
+      +'<td><div style="font-weight:500;font-size:12px">'+e.name+'</div><span class="badge '+(e.sheet==='Driver'?'b-dr':'b-st')+'" style="font-size:9px">'+e.sheet+'</span></td>'
+      +'<td><input class="ri" type="number" min="0" max="31" value="'+L.worked_days+'" style="width:50px" oninput="updR(''+e.id+'','worked_days',this.value)"></td>'
+      +'<td style="font-size:12px;color:var(--text-2)">'+num(calcBasic(L))+'</td>'
+      +'<td><input class="ri" type="number" min="0" value="'+(L.trip_commission||0)+'" style="width:85px;'+(hasAutoTrip?'border-color:var(--green-bd);background:#F8FFF8':'')+'" oninput="updR(''+e.id+'','trip_commission',this.value)"></td>'
+      +earnCells
+      +'<td><input class="ri" type="number" min="0" value="'+(L.advances||0)+'" style="width:80px;color:var(--red-text)" oninput="updR(''+e.id+'','advances',this.value)"></td>'
+      +'<td style="font-size:11px;color:var(--text-2);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+dedDetail+'">'+( dedDetail||'—')+'</td>'
+      +'<td style="text-align:right;font-weight:600;font-size:12px" id="net-'+e.id+'">'+(net>0?aed(net):'—')+'</td>'
+      +'<td><button class="btn xs" onclick="previewSlip(''+e.id+'')">Preview</button></td>'
+      +'</tr>';
   }).join('');
   updateTot();
 }
