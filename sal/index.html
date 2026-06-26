@@ -2257,15 +2257,15 @@ async function delEarnType(id){
 
 // Get custom earnings for an employee in a period
 function getCustomEarns(empId, month, year){
-  // Recurring types
-  const recurring = DB.earnTypes.filter(et=>et.active&&et.recur==='recurring').map(et=>{
+  // All active earnings types (recurring + one-off) — always show all
+  const allTypes = DB.earnTypes.filter(et=>et.active).map(et=>{
     const existing = DB.customEarns.find(c=>c.emp_id===empId&&c.earn_type_id===et.id&&c.month===month&&c.year===year);
-    return {earn_type_id:et.id, label:et.label, amount:existing?existing.amount:0, recur:'recurring'};
+    return {earn_type_id:et.id, label:et.label, amount:existing?existing.amount:0, recur:et.recur||'recurring'};
   });
-  // One-off custom items for this emp/period
-  const oneoff = DB.customEarns.filter(c=>c.emp_id===empId&&c.month===month&&c.year===year&&c.recur==='oneoff')
+  // Plus any manually added one-off items not from earnTypes
+  const manualOneoff = DB.customEarns.filter(c=>c.emp_id===empId&&c.month===month&&c.year===year&&c.recur==='oneoff'&&!DB.earnTypes.find(et=>et.id===c.earn_type_id))
     .map(c=>({earn_type_id:c.id, label:c.label, amount:c.amount, recur:'oneoff', _id:c.id}));
-  return [...recurring, ...oneoff];
+  return [...allTypes, ...manualOneoff];
 }
 
 // Save custom earning amount
@@ -2283,12 +2283,8 @@ function totalCustomEarns(empId, month, year){
 
 
 function buildEarnRows(empId, m, y){
-  const all = getCustomEarns(empId, m, y);
-  // Always show recurring types (so user can fill them in)
-  // Only show one-off types when they have a value
-  const earns = all.filter(c=>c.recur==='recurring'||(parseFloat(c.amount)||0)>0);
-  const hasRecurring = DB.earnTypes.filter(et=>et.active&&et.recur==='recurring').length > 0;
-  if(!earns.length && !hasRecurring) return '';
+  const earns = getCustomEarns(empId, m, y);
+  if(!earns.length) return '';
   return earns.map(c=>`
     <tr style="background:var(--bg)">
       <td style="padding:4px 12px 4px 28px;font-size:11px;color:var(--text-2)">
