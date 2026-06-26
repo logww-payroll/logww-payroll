@@ -2988,33 +2988,36 @@ function exportWPS(runId){
 
 /* ─── EMAIL SENDING ─── */
 async function sendSlipsForRun(run, lines, period){
-  const withEmail=lines.filter(L=>{const e=DB.employees.find(x=>x.id===L.employee_id);return e&&e.email&&e.email.includes('@');});
-  let sent=0,failed=0;
-  const toast=document.createElement('div');
-  toast.style.cssText='position:fixed;bottom:20px;right:20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:1rem 1.25rem;min-width:280px;box-shadow:0 4px 20px rgba(0,0,0,.12);z-index:999;font-size:13px';
-  toast.innerHTML='<div style="font-weight:600;margin-bottom:8px">Sending salary slips…</div><div id="email-log" style="font-size:12px;color:var(--text-2)"></div>';
-  document.body.appendChild(toast);
-  for(const L of withEmail){
-    const e=DB.employees.find(x=>x.id===L.employee_id)||{name:L.employee_name};
-    const logEl=document.getElementById('email-log');
-    if(logEl)logEl.textContent='Sending to '+e.name+'…';
+  const EDGE_FN = `${sbUrl}/functions/v1/send-salary-slip`;
+  let sent=0, failed=0;
+
+  const prog = document.createElement('div');
+  prog.style.cssText='position:fixed;bottom:20px;right:20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:1rem 1.25rem;min-width:300px;box-shadow:0 4px 20px rgba(0,0,0,.12);z-index:999;font-size:13px';
+  prog.innerHTML='<div style="font-weight:600;margin-bottom:8px">Sending salary slips…</div><div id="send-log" style="font-size:12px;color:var(--text-2)">Preparing…</div>';
+  document.body.appendChild(prog);
+
+  for(const L of lines){
+    const e=DB.employees.find(x=>x.id===L.employee_id)||{name:L.employee_name,email:''};
+    if(!e.email||!e.email.includes('@')) continue;
+    const logEl=document.getElementById('send-log');
+    if(logEl) logEl.textContent=`Sending to ${e.name} (${e.email})…`;
     try{
-      const body=buildEmailHtml(e,{...L,period_month:run.period_month,period_year:run.period_year},period);
-      const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,
-          system:'Use Gmail to send this salary slip email. After sending respond ONLY with JSON: {"ok":true} or {"ok":false,"error":"reason"}. No other text.',
-          messages:[{role:'user',content:'Send via Gmail:\nTo: '+e.email+'\nSubject: Salary Slip — '+e.name+' — '+period+'\nBody (HTML):\n'+body}],
-          mcp_servers:[{type:'url',url:'https://gmailmcp.googleapis.com/mcp/v1',name:'gmail-mcp'}]})});
+      const htmlBody=buildEmailHtml(e,{...L,period_month:run.period_month,period_year:run.period_year},period);
+      const res=await fetch(EDGE_FN,{
+        method:'POST',
+        headers:{'Content-Type':'application/json','apikey':sbKey},
+        body:JSON.stringify({to_email:e.email,to_name:e.name,subject:`Salary Slip — ${e.name} — ${period}`,html_body:htmlBody}),
+      });
       const data=await res.json();
-      const tb=(data.content||[]).find(b=>b.type==='text');
-      let result={ok:false,error:'No response'};
-      if(tb){try{result=JSON.parse(tb.text.replace(/```json|```/g,'').trim());}catch{result={ok:true};}}
-      else if((data.content||[]).some(b=>b.type==='mcp_tool_use'||b.type==='tool_use'))result={ok:true};
-      if(result.ok)sent++;else{failed++;console.warn('Failed:',e.name,result.error);}
-    }catch(err){failed++;console.error(err);}
+      if(data.ok){sent++;console.log(`✓ ${e.name}`);}
+      else{failed++;console.error(`✗ ${e.name}:`,data.error,data.details);}
+    }catch(err){failed++;console.error(`Error ${e.name}:`,err);}
   }
-  document.body.removeChild(toast);
-  toast(sent+' salary slip'+(sent!==1?'s':'')+' sent',failed>0?failed+' failed — check browser console':'All delivered successfully.',failed>0?'warn':'success',5000);
+
+  document.body.removeChild(prog);
+  if(sent>0&&failed===0) toast('✓ All slips sent',`${sent} slip${sent>1?'s':''} delivered from payroll@logww.com`,'success',5000);
+  else if(sent>0) toast('Partially sent',`${sent} delivered, ${failed} failed`,'warn',6000);
+  else toast('Send failed',`${failed} failed — check browser console`,'error',6000);
 }
 
 function sendRunSlips(runId){
