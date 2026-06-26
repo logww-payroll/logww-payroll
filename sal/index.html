@@ -913,21 +913,6 @@ function saveTrip(){
   };
   if(id)DB.trips=DB.trips.map(x=>x.id===id?t:x);else DB.trips.push(t);
   save();
-  // Push trip to Supabase immediately
-  if(sbUrl&&sbKey){
-    let authToken=sbKey;
-    if(supabaseClient){supabaseClient.auth.getSession().then(({data:{session}})=>{
-      if(session?.access_token)authToken=session.access_token;
-      fetch(`${sbUrl}/rest/v1/trip_log`,{method:'POST',
-        headers:{apikey:sbKey,Authorization:'Bearer '+authToken,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
-        body:JSON.stringify({id:t.id,period_month:t.period_month,period_year:t.period_year,
-          employee_id:t.employee_id,employee_name:t.employee_name,trip_date:t.trip_date||null,
-          truck:t.truck||'',route:t.route||'',customer:t.customer||'',trip_comm:t.trip_comm||0,
-          border_exp:t.border_exp||0,diesel_exp:t.diesel_exp||0,other_exp:t.other_exp||0,
-          total:t.total||0,from_loc:t.from_loc||'',to_loc:t.to_loc||'',notes:t.notes||''})
-      }).catch(e=>console.error('Trip push:',e));
-    });}
-  }
   closeM('modal-trip');renderTrips();
 }
 
@@ -1546,7 +1531,7 @@ async function pushSB(run,lines){
         employee_id:t.employee_id,employee_name:t.employee_name,trip_date:t.trip_date||null,
         truck:t.truck||'',route:t.route||'',customer:t.customer||'',trip_comm:t.trip_comm||0,
         border_exp:t.border_exp||0,diesel_exp:t.diesel_exp||0,other_exp:t.other_exp||0,
-        total:t.total||0,from_loc:t.from_loc||'',to_loc:t.to_loc||'',notes:t.notes||''});
+        total:t.total||0});
     }
     for(const d of DB.deds.filter(x=>x.period_month===m&&x.period_year===y)){
       await post('deductions',{id:d.id,period_month:d.period_month,period_year:d.period_year,
@@ -2612,8 +2597,7 @@ async function pushAllToSupabase(){
         employee_id:t.employee_id,employee_name:t.employee_name,trip_date:t.trip_date||null,
         truck:t.truck||'',route:t.route||'',customer:t.customer||'',
         trip_comm:t.trip_comm||0,border_exp:t.border_exp||0,diesel_exp:t.diesel_exp||0,
-        other_exp:t.other_exp||0,total:t.total||0,from_loc:t.from_loc||'',
-        to_loc:t.to_loc||'',notes:t.notes||''});
+        other_exp:t.other_exp||0,total:t.total||0});
       r.ok?pushed++:errors++;
     }
     // Push all deductions
