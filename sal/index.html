@@ -1297,7 +1297,7 @@ function renderHistory(){
         <div style="display:flex;gap:8px"><button class="btn xs" onclick="event.stopPropagation();viewRun('${r.id}')">View slips</button>
         ${DB.suppls&&DB.suppls.filter(s=>s.run_id===r.id).length?`<button class="btn xs" onclick="event.stopPropagation();viewSupplSlips('${r.id}')" style="color:var(--blue-text)">Suppl slips (${DB.suppls.filter(s=>s.run_id===r.id).length})</button>`:''}
         <button class="btn xs" onclick="event.stopPropagation();sendRunSlips('${r.id}')">Send emails</button>
-        <button class="btn xs" onclick="event.stopPropagation();exportRunCSV('${r.id}')">Export CSV</button>
+        <button class="btn xs" onclick="event.stopPropagation();exportRunCSV('${r.id}')">Export CSV</button><button class="btn xs" onclick="event.stopPropagation();exportWPS('${r.id}')" style="color:var(--green-text);border-color:var(--green-bd)">Export WPS</button>
         ${r.status==='paid'
           ?`<span class="badge" style="background:var(--green-bg);color:var(--green-text);padding:4px 10px">✓ Paid</span>
            <button class="btn xs" onclick="event.stopPropagation();openSupplModal('${r.id}')" style="color:var(--blue-text);border-color:var(--blue-bd)">+ Supplementary</button>`
@@ -2912,6 +2912,78 @@ function viewSupplSlips(runId){
     </div>`;
   }).join('');
   document.getElementById('modal-all').classList.add('open');
+}
+
+
+/* ─── WPS EXPORT ─── */
+function exportWPS(runId){
+  const run = DB.runs.find(r=>r.id===runId); if(!run) return;
+  const lines = DB.lines.filter(l=>l.run_id===runId);
+  const period = MONTHS[run.period_month-1]+' '+run.period_year;
+  const co = DB.company;
+  const wps = co.wps||5;
+  const vat = co.vat||0.25;
+
+  // Build WPS data rows
+  const rows = lines.filter(l=>l.net_payable>0).map(L=>{
+    const e = DB.employees.find(x=>x.id===L.employee_id)||{};
+    const customTotal = totalCustomEarns(L.employee_id, run.period_month, run.period_year);
+    const salary = parseFloat(L.net_payable)||0;
+    return [
+      '',                          // MOLID - bank assigned, leave blank
+      '793543',                    // CMOLI - company MOL ID
+      e.name||L.employee_name,     // EMPNAME
+      e.work_permit||'',           // WORKPERM
+      'DP',                        // DMEBRA - Direct Payment
+      e.iban||'',                  // ACNO
+      salary,                      // Salary (net payable)
+      wps,                         // Com (WPS commission)
+      vat,                         // VAT
+      salary + wps + vat,          // TOTAL
+    ];
+  });
+
+  // Grand total row
+  const totSalary = rows.reduce((s,r)=>s+r[6],0);
+  const totCom = rows.reduce((s,r)=>s+r[7],0);
+  const totVat = rows.reduce((s,r)=>s+r[8],0);
+  const totTotal = rows.reduce((s,r)=>s+r[9],0);
+
+  const grandTotal = ['Grand Total','','','','','',totSalary,totCom,totVat,totTotal];
+
+  // Build workbook using SheetJS
+  const wsData = [
+    ['MOLID','CMOLI','EMPNAME','WORKPERM','DMEBRA','ACNO','Salary','Com','VAT','TOTAL'],
+    ...rows,
+    grandTotal
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+  // Column widths
+  ws['!cols'] = [
+    {wch:20},{wch:10},{wch:38},{wch:14},{wch:8},{wch:28},{wch:10},{wch:8},{wch:8},{wch:12}
+  ];
+
+  // Style headers (SheetJS basic styling)
+  const headerStyle = {font:{bold:true},fill:{fgColor:{rgb:'1F4E79'}},alignment:{horizontal:'center'}};
+
+  // Format salary columns as numbers
+  const numFmt = '#,##0.00';
+  const dataStart = 2; // row index 1 (0-based) = Excel row 2
+  for(let r=dataStart; r<=rows.length+dataStart; r++){
+    ['G','H','I','J'].forEach(col=>{
+      const cellRef = col+r;
+      if(ws[cellRef]) ws[cellRef].z = numFmt;
+    });
+  }
+
+  const wb2 = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb2, ws, 'WPS');
+
+  // Download
+  XLSX.writeFile(wb2, `WPS_${MONTHS[run.period_month-1]}_${run.period_year}.xlsx`);
+  toast('WPS exported',`WPS sheet for ${period} downloaded.`,'success',3000);
 }
 
 /* ─── EMAIL SENDING ─── */
