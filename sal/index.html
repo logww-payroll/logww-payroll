@@ -1324,7 +1324,7 @@ function buildSlip(e,L,period){
     ${(()=>{
       const days=L.worked_days||0; const totalDays=L.total_days||30;
       const ratio=days>=totalDays?1:days/totalDays;
-      const rawBasic=L.basic_salary||e.basic_salary||0;
+      const rawBasic=e.basic_salary||0;
       const rawHousing=e.housing_allowance||0;
       const rawTransport=e.transport_allowance||0;
       const pBasic=rawBasic*ratio, pHousing=rawHousing*ratio, pTransport=rawTransport*ratio;
