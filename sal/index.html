@@ -512,6 +512,8 @@ tbody td{padding:8px 12px;vertical-align:middle}
       <div class="fgrp"><label>Labor card no.</label><input type="text" id="emp-lc" class="mono"></div>
       <div class="fgrp s2"><label>IBAN / Account</label><input type="text" id="emp-iban" class="mono"></div>
       <div class="fgrp"><label>Basic salary (AED/month)</label><input type="number" id="emp-basic" value="0"></div>
+      <div class="fgrp"><label>Housing allowance (AED/month)</label><input type="number" id="emp-housing" value="0" placeholder="0"></div>
+      <div class="fgrp"><label>Transport allowance (AED/month)</label><input type="number" id="emp-transport" value="0" placeholder="0"></div>
       <div class="fgrp"><label>Other allowance (AED/month)</label><input type="number" id="emp-allowance" value="0" placeholder="0"></div>
       <div class="fgrp"><label>Email</label><input type="email" id="emp-email"></div>
     </div>
@@ -1161,7 +1163,13 @@ function renderRunRows(){
   updateTot();
 }
 
-function calcBasic(L){const t=L.total_days||30,w=parseInt(L.worked_days)||0;return w>=t?(L.basic_salary||0):((L.basic_salary||0)/t)*w;}
+function calcBasic(L){
+  const t=L.total_days||30,w=parseInt(L.worked_days)||0;
+  const e=DB.employees.find(x=>x.id===L.employee_id)||{};
+  const housing=e.housing_allowance||0, transport=e.transport_allowance||0;
+  const total=(L.basic_salary||0)+housing+transport;
+  return w>=t ? total : (total/t)*w;
+}
 function calcNet(L, m, y){
   // m and y are optional - fall back to reading from DOM safely
   const pm = m || (document.getElementById('run-month') ? getM('run-month') : now.getMonth()+1);
@@ -1311,13 +1319,17 @@ function buildSlip(e,L,period){
     </div>
     <div class="slip-sec">Section A — Fixed salary</div>
     ${(()=>{
-      const fullBasic=L.basic_salary||e.basic_salary||0;
       const days=L.worked_days||0; const totalDays=L.total_days||30;
-      const isPartial=days<totalDays&&fullBasic>0;
-      return isPartial
-        ? `<div class="sr"><span>Basic salary</span><span>${num(fullBasic)}</span></div>
-           <div class="sr" style="color:var(--text-2);font-size:11px"><span>× ${days}/${totalDays} days worked</span><span>(${num(fullBasic-basic)})</span></div>`
-        : `<div class="sr"><span>Basic salary</span><span>${num(basic)}</span></div>`;
+      const ratio=days>=totalDays?1:days/totalDays;
+      const rawBasic=L.basic_salary||e.basic_salary||0;
+      const rawHousing=e.housing_allowance||0;
+      const rawTransport=e.transport_allowance||0;
+      const pBasic=rawBasic*ratio, pHousing=rawHousing*ratio, pTransport=rawTransport*ratio;
+      const isPartial=days<totalDays;
+      const absFmt=(v,r)=>isPartial&&r>0?` <span style="font-size:10px;color:var(--text-2)">(×${days}/${totalDays})</span>`:'';
+      return (rawBasic>0?`<div class="sr"><span>Basic salary${isPartial&&rawBasic>0?' <span style="font-size:10px;color:var(--text-2)">(×'+days+'/'+totalDays+')</span>':''}</span><span>${num(pBasic)}</span></div>`:'')
+        +(rawHousing>0?`<div class="sr"><span>Housing allowance${isPartial?' <span style="font-size:10px;color:var(--text-2)">(×'+days+'/'+totalDays+')</span>':''}</span><span>${num(pHousing)}</span></div>`:'')
+        +(rawTransport>0?`<div class="sr"><span>Transport allowance${isPartial?' <span style="font-size:10px;color:var(--text-2)">(×'+days+'/'+totalDays+')</span>':''}</span><span>${num(pTransport)}</span></div>`:'');
     })()}
     ${customEarnsA.map(c=>`<div class="sr"><span>${c.label}</span><span>${num(c.amount)}</span></div>`).join('')}
     <div class="sr tot"><span>Total fixed</span><span>${num(basic+customTotalA)}</span></div>
@@ -1457,11 +1469,11 @@ function renderEmps(){
   </tr>`).join('');
 }
 function openEmpModal(){clearEmpF();document.getElementById('emp-mt').textContent='Add employee';document.getElementById('modal-emp').classList.add('open');}
-function clearEmpF(){['emp-id','emp-name','emp-desig','emp-wp','emp-lc','emp-iban','emp-email'].forEach(id=>document.getElementById(id).value='');document.getElementById('emp-basic').value='0';document.getElementById('emp-allowance').value='0';document.getElementById('emp-sheet').value='Driver';}
-function editEmp(id){const e=DB.employees.find(x=>x.id===id);if(!e)return;document.getElementById('emp-id').value=e.id;document.getElementById('emp-name').value=e.name;document.getElementById('emp-sheet').value=e.sheet;document.getElementById('emp-desig').value=e.designation||'';document.getElementById('emp-wp').value=e.work_permit||'';document.getElementById('emp-lc').value=e.labor_card||'';document.getElementById('emp-iban').value=e.iban||'';document.getElementById('emp-basic').value=e.basic_salary||0;document.getElementById('emp-allowance').value=e.other_allowance||0;document.getElementById('emp-email').value=e.email||'';document.getElementById('emp-mt').textContent='Edit employee';document.getElementById('modal-emp').classList.add('open');}
+function clearEmpF(){['emp-id','emp-name','emp-desig','emp-wp','emp-lc','emp-iban','emp-email'].forEach(id=>document.getElementById(id).value='');document.getElementById('emp-basic').value='0';document.getElementById('emp-housing').value='0';document.getElementById('emp-transport').value='0';document.getElementById('emp-allowance').value='0';document.getElementById('emp-sheet').value='Driver';}
+function editEmp(id){const e=DB.employees.find(x=>x.id===id);if(!e)return;document.getElementById('emp-id').value=e.id;document.getElementById('emp-name').value=e.name;document.getElementById('emp-sheet').value=e.sheet;document.getElementById('emp-desig').value=e.designation||'';document.getElementById('emp-wp').value=e.work_permit||'';document.getElementById('emp-lc').value=e.labor_card||'';document.getElementById('emp-iban').value=e.iban||'';document.getElementById('emp-basic').value=e.basic_salary||0;document.getElementById('emp-housing').value=e.housing_allowance||0;document.getElementById('emp-transport').value=e.transport_allowance||0;document.getElementById('emp-allowance').value=e.other_allowance||0;document.getElementById('emp-email').value=e.email||'';document.getElementById('emp-mt').textContent='Edit employee';document.getElementById('modal-emp').classList.add('open');}
 function saveEmp(){
   const id=document.getElementById('emp-id').value;
-  const e={id:id||uid(),name:document.getElementById('emp-name').value,sheet:document.getElementById('emp-sheet').value,designation:document.getElementById('emp-desig').value,work_permit:document.getElementById('emp-wp').value,labor_card:document.getElementById('emp-lc').value,iban:document.getElementById('emp-iban').value,basic_salary:parseFloat(document.getElementById('emp-basic').value)||0,other_allowance:parseFloat(document.getElementById('emp-allowance').value)||0,email:document.getElementById('emp-email').value||''};
+  const e={id:id||uid(),name:document.getElementById('emp-name').value,sheet:document.getElementById('emp-sheet').value,designation:document.getElementById('emp-desig').value,work_permit:document.getElementById('emp-wp').value,labor_card:document.getElementById('emp-lc').value,iban:document.getElementById('emp-iban').value,basic_salary:parseFloat(document.getElementById('emp-basic').value)||0,housing_allowance:parseFloat(document.getElementById('emp-housing').value)||0,transport_allowance:parseFloat(document.getElementById('emp-transport').value)||0,other_allowance:parseFloat(document.getElementById('emp-allowance').value)||0,email:document.getElementById('emp-email').value||''};
   if(id) DB.employees=DB.employees.map(x=>x.id===id?e:x);
   else DB.employees.push(e);
   save();
@@ -1474,7 +1486,7 @@ function saveEmp(){
         headers:{apikey:sbKey,Authorization:'Bearer '+authToken,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
         body:JSON.stringify({id:e.id,name:e.name,sheet:e.sheet,designation:e.designation||'',
           work_permit:e.work_permit||'',labor_card:e.labor_card||'',iban:e.iban||'',
-          basic_salary:e.basic_salary||0,other_allowance:e.other_allowance||0,email:e.email})
+          basic_salary:e.basic_salary||0,housing_allowance:e.housing_allowance||0,transport_allowance:e.transport_allowance||0,other_allowance:e.other_allowance||0,email:e.email})
       }).then(r=>r.ok?toast('Saved',e.name+' updated.','success',2000):console.error('Employee push failed',r.status));
     });}
   } else {
@@ -1566,7 +1578,7 @@ async function pushSB(run,lines){
     for(const e of DB.employees){
       await post('employees',{id:e.id,name:e.name,sheet:e.sheet,designation:e.designation||'',
         work_permit:e.work_permit||'',labor_card:e.labor_card||'',iban:e.iban||'',
-        basic_salary:e.basic_salary||0,other_allowance:e.other_allowance||0,email:e.email||''});
+        basic_salary:e.basic_salary||0,housing_allowance:e.housing_allowance||0,transport_allowance:e.transport_allowance||0,other_allowance:e.other_allowance||0,email:e.email||''});
     }
     // Ledger + recoveries (all entries, not just this period)
     for(const l of DB.ledger){
@@ -2120,7 +2132,7 @@ async function syncFromSupabase(){
         missingEmails.forEach(e=>fetch(`${sbUrl}/rest/v1/employees`,{method:'POST',headers:h2,
           body:JSON.stringify({id:e.id,name:e.name,sheet:e.sheet,designation:e.designation||'',
             work_permit:e.work_permit||'',labor_card:e.labor_card||'',iban:e.iban||'',
-            basic_salary:e.basic_salary||0,other_allowance:e.other_allowance||0,email:e.email})}).catch(()=>{}));
+            basic_salary:e.basic_salary||0,housing_allowance:e.housing_allowance||0,transport_allowance:e.transport_allowance||0,other_allowance:e.other_allowance||0,email:e.email})}).catch(()=>{}));
         console.log(`Auto-pushed ${missingEmails.length} employee emails to Supabase`);
       }
     }
@@ -2598,7 +2610,7 @@ async function pushAllToSupabase(){
     for(const e of DB.employees){
       const r=await post('employees',{id:e.id,name:e.name,sheet:e.sheet,designation:e.designation||'',
         work_permit:e.work_permit||'',labor_card:e.labor_card||'',iban:e.iban||'',
-        basic_salary:e.basic_salary||0,other_allowance:e.other_allowance||0,email:e.email||''});
+        basic_salary:e.basic_salary||0,housing_allowance:e.housing_allowance||0,transport_allowance:e.transport_allowance||0,other_allowance:e.other_allowance||0,email:e.email||''});
       r.ok?pushed++:errors++;
     }
     // Push commission rates
