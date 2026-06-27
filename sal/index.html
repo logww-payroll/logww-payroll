@@ -1082,8 +1082,8 @@ function buildRunTable(){
       // Always recalculate these from live data
       employee_id:e.id, employee_name:e.name,
       basic_salary:e.basic_salary,
-      // Use saved other_commission if exists, else auto from employee other_allowance
-      other_commission:ex ? (ex.other_commission!=null ? ex.other_commission : (e.other_allowance||0)) : (e.other_allowance||0),
+      // other_commission = manual attendance allowance (variable, entered in Run Payroll)
+      other_commission:ex ? (ex.other_commission!=null ? ex.other_commission : 0) : 0,
       // Respect saved trip_commission if run already saved; only auto-calc for new runs
       trip_commission:ex ? (ex.trip_commission!=null ? ex.trip_commission : autoTrip) : autoTrip,
       advances:totalDed,              // fresh from deductions + ledger EMI
@@ -1166,8 +1166,8 @@ function renderRunRows(){
 function calcBasic(L){
   const t=L.total_days||30,w=parseInt(L.worked_days)||0;
   const e=DB.employees.find(x=>x.id===L.employee_id)||{};
-  const housing=e.housing_allowance||0, transport=e.transport_allowance||0;
-  const total=(L.basic_salary||0)+housing+transport;
+  const housing=e.housing_allowance||0, transport=e.transport_allowance||0, other=e.other_allowance||0;
+  const total=(L.basic_salary||0)+housing+transport+other;
   return w>=t ? total : (total/t)*w;
 }
 function calcNet(L, m, y){
@@ -1327,12 +1327,14 @@ function buildSlip(e,L,period){
       const rawBasic=e.basic_salary||0;
       const rawHousing=e.housing_allowance||0;
       const rawTransport=e.transport_allowance||0;
+      const rawOther=e.other_allowance||0;
       const pBasic=rawBasic*ratio, pHousing=rawHousing*ratio, pTransport=rawTransport*ratio;
       const isPartial=days<totalDays;
       const absFmt=(v,r)=>isPartial&&r>0?` <span style="font-size:10px;color:var(--text-2)">(×${days}/${totalDays})</span>`:'';
       return (rawBasic>0?`<div class="sr"><span>Basic salary${isPartial&&rawBasic>0?' <span style="font-size:10px;color:var(--text-2)">(×'+days+'/'+totalDays+')</span>':''}</span><span>${num(pBasic)}</span></div>`:'')
         +(rawHousing>0?`<div class="sr"><span>Housing allowance${isPartial?' <span style="font-size:10px;color:var(--text-2)">(×'+days+'/'+totalDays+')</span>':''}</span><span>${num(pHousing)}</span></div>`:'')
-        +(rawTransport>0?`<div class="sr"><span>Transport allowance${isPartial?' <span style="font-size:10px;color:var(--text-2)">(×'+days+'/'+totalDays+')</span>':''}</span><span>${num(pTransport)}</span></div>`:'');
+        +(rawTransport>0?`<div class="sr"><span>Transport allowance${isPartial?' <span style="font-size:10px;color:var(--text-2)">(×'+days+'/'+totalDays+')</span>':''}</span><span>${num(rawTransport*ratio)}</span></div>`:'')
+        +(rawOther>0?`<div class="sr"><span>Other allowance${isPartial?' <span style="font-size:10px;color:var(--text-2)">(×'+days+'/'+totalDays+')</span>':''}</span><span>${num(rawOther*ratio)}</span></div>`:'');
     })()}
     ${customEarnsA.map(c=>`<div class="sr"><span>${c.label}</span><span>${num(c.amount)}</span></div>`).join('')}
     <div class="sr tot"><span>Total fixed</span><span>${num(basic+customTotalA)}</span></div>
