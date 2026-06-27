@@ -2625,9 +2625,18 @@ async function pushAllToSupabase(){
   try{
     // Push employees
     for(const e of DB.employees){
-      await postLogged('employees',{id:e.id,name:e.name,sheet:e.sheet,designation:e.designation||'',
+      // Try with all fields first, fall back without new allowance cols if 400
+      const empPayload={id:e.id,name:e.name,sheet:e.sheet,designation:e.designation||'',
         work_permit:e.work_permit||'',labor_card:e.labor_card||'',iban:e.iban||'',
-        basic_salary:e.basic_salary||0,housing_allowance:e.housing_allowance||0,transport_allowance:e.transport_allowance||0,other_allowance:e.other_allowance||0,email:e.email||''});
+        basic_salary:e.basic_salary||0,housing_allowance:e.housing_allowance||0,
+        transport_allowance:e.transport_allowance||0,other_allowance:e.other_allowance||0,email:e.email||''};
+      let empR=await fetch(`${sbUrl}/rest/v1/employees`,{method:'POST',headers:h,body:JSON.stringify(empPayload)});
+      if(!empR.ok){
+        // Retry without new columns in case they don't exist
+        const {housing_allowance,transport_allowance,other_allowance,...empBase}=empPayload;
+        empR=await fetch(`${sbUrl}/rest/v1/employees`,{method:'POST',headers:h,body:JSON.stringify(empBase)});
+      }
+      empR.ok?pushed++:(()=>{errorLog.push('employees: '+empR.status);errors++;})();
     }
     // Push commission rates
     for(const r of DB.rates){
@@ -2668,7 +2677,7 @@ async function pushAllToSupabase(){
 
     if(errorLog.length) console.error('Push errors:\n'+errorLog.join('\n'));
     toast('Sync complete',`${pushed} records pushed.${errors?' '+errors+' errors — opening console for details.':''}`,errors?'warn':'success',5000);
-    if(errorLog.length) setTimeout(()=>alert('Push errors (first 5):\n\n'+errorLog.slice(0,5).join('\n')),500);
+    if(errorLog.length) setTimeout(()=>alert('Push errors (first 3):\n\n'+errorLog.slice(0,3).map(e=>e.slice(0,300)).join('\n\n')),500);
   }catch(e){
     toast('Push failed',e.message,'error');
     console.error('Push all error:',e);
