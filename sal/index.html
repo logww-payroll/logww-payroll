@@ -1081,9 +1081,9 @@ function buildRunTable(){
       employee_id:e.id, employee_name:e.name,
       basic_salary:e.basic_salary,
       // Use saved other_commission if exists, else auto from employee other_allowance
-      other_commission:ex ? (ex.other_commission??e.other_allowance||0) : (e.other_allowance||0),
+      other_commission:ex ? (ex.other_commission!=null ? ex.other_commission : (e.other_allowance||0)) : (e.other_allowance||0),
       // Respect saved trip_commission if run already saved; only auto-calc for new runs
-      trip_commission:ex ? (ex.trip_commission??autoTrip) : autoTrip,
+      trip_commission:ex ? (ex.trip_commission!=null ? ex.trip_commission : autoTrip) : autoTrip,
       advances:totalDed,              // fresh from deductions + ledger EMI
       deduction_notes:allDedNotes,    // fresh notes
       // Keep manual overrides for days if already saved
