@@ -1283,7 +1283,10 @@ async function savePayroll(){
 /* ─── SLIPS ─── */
 function buildSlip(e,L,period){
   const co=DB.company;const wps=co.wps||5,vat=co.vat||0.25;
-  const basic=typeof L.total_fixed==='number'?L.total_fixed:calcBasic(L);
+  // Always use live employee record so housing/transport allowances are current
+  const liveEmp=DB.employees.find(x=>x.id===(e.id||L.employee_id))||e;
+  e=liveEmp;
+  const basic=calcBasic(L);
   const trip=parseFloat(L.trip_commission)||0;
   const other=parseFloat(L.other_commission)||0;
   const adv=parseFloat(L.advances)||0;
@@ -2123,6 +2126,9 @@ async function syncFromSupabase(){
           labor_card:se.labor_card||local?.labor_card||'',
           iban:se.iban||local?.iban||'',
           basic_salary:parseFloat(se.basic_salary)||local?.basic_salary||0,
+          housing_allowance:parseFloat(se.housing_allowance)||local?.housing_allowance||0,
+          transport_allowance:parseFloat(se.transport_allowance)||local?.transport_allowance||0,
+          other_allowance:parseFloat(se.other_allowance)||local?.other_allowance||0,
           // Always prefer whichever has email — local wins if Supabase is empty
           email:se.email||local?.email||'',
         };
