@@ -1331,7 +1331,7 @@ function buildSlip(e,L,period){
     ${adv>0?`<div class="sr neg"><span>Less: deductions</span><span>(${num(adv)})</span></div>`:''}
     <div class="sr"><span>WPS commission</span><span>${num(wps)}</span></div>
     <div class="sr"><span>VAT</span><span>${num(vat)}</span></div>
-    <div class="slip-net"><span class="slip-net-l">Net payable</span><span class="slip-net-v">${net>0?aed(grand):'AED 0.00'}</span></div>
+    <div class="slip-net"><span class="slip-net-l">Net payable</span><span class="slip-net-v">${net>0?aed(net):'AED 0.00'}</span></div>
     ${(tripLines.length||dedLines.length||trip||adv)?`<div class="slip-memo">
       <div class="slip-memo-t">Additional memo — commission & deduction detail</div>
       ${tripLines.length?`<div style="font-size:10px;font-weight:600;color:var(--text-2);margin:5px 0 3px">Trips</div>${tripLines.map(t=>`<div class="slip-memo-r"><span>${fmtDate(t.trip_date)} · ${t.route}${t.truck?' · '+t.truck:''}${t.from_loc?' · '+t.from_loc+' → '+t.to_loc:''}</span><span>${num(t.trip_comm)}</span></div>`).join('')}`
@@ -3025,7 +3025,7 @@ function viewSupplSlips(runId){
         <div class="sr"><span>Supplementary amount</span><span>${num(s.amount)}</span></div>
         <div class="sr"><span>WPS commission</span><span>${num(wps)}</span></div>
         <div class="sr"><span>VAT</span><span>${num(vat)}</span></div>
-        <div class="slip-net"><span class="slip-net-l">Net payable</span><span class="slip-net-v">${aed(grand)}</span></div>
+        <div class="slip-net"><span class="slip-net-l">Net payable</span><span class="slip-net-v">${aed(s.amount)}</span></div>
         <div class="slip-memo">
           <div class="slip-memo-t">Note</div>
           <div class="slip-disc">This is a supplementary payment in addition to the regular ${period} salary. All variable incentives and commissions are entirely at management's discretion.</div>
@@ -3285,7 +3285,7 @@ function buildEmailHtml(e,L,period){
     :'')
   +'<tr><td style="padding:4px 6px;color:#555">WPS Commission</td><td style="text-align:right;padding:4px 6px">AED '+num(wps)+'</td></tr>'
   +'<tr><td style="padding:4px 6px;color:#555">VAT</td><td style="text-align:right;padding:4px 6px">AED '+num(vat)+'</td></tr>'
-  +'<tr style="background:#1A1A2E;color:#fff;font-size:14px"><td style="padding:10px 6px;font-weight:700">NET PAYABLE</td><td style="text-align:right;padding:10px 6px;font-weight:700">AED '+(net>0?num(grand):'0.00')+'</td></tr>'
+  +'<tr style="background:#1A1A2E;color:#fff;font-size:14px"><td style="padding:10px 6px;font-weight:700">NET PAYABLE</td><td style="text-align:right;padding:10px 6px;font-weight:700">AED '+(net>0?num(net):'0.00')+'</td></tr>'
   +'</table>'
   +((tripLines.length||trip||adv||ledgerLines.length)?
     '<div style="margin-top:14px;background:#f9f9f9;border:1px solid #eee;border-radius:6px;padding:12px 14px">'
