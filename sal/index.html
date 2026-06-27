@@ -1079,8 +1079,9 @@ function buildRunTable(){
       // Always recalculate these from live data
       employee_id:e.id, employee_name:e.name,
       basic_salary:e.basic_salary,
-      other_commission:0,
-      trip_commission:autoTrip,       // fresh from trip log
+      other_commission:ex?.other_commission||0,
+      // Respect saved trip_commission if run already saved; only auto-calc for new runs
+      trip_commission:ex ? (ex.trip_commission??autoTrip) : autoTrip,
       advances:totalDed,              // fresh from deductions + ledger EMI
       deduction_notes:allDedNotes,    // fresh notes
       // Keep manual overrides for days if already saved
