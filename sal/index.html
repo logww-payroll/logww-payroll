@@ -1055,7 +1055,7 @@ function buildRunTable(){
     const ex=existLines.find(l=>l.employee_id===e.id);
     // Auto-calculate from trip log
     const empTrips=DB.trips.filter(t=>t.period_month===m&&t.period_year===y&&(t.employee_id===e.id||(t.employee_id===''&&t.employee_name===e.name)));
-    const autoTrip=empTrips.reduce((s,t)=>s+(t.trip_comm||0),0);
+    const autoTrip=empTrips.reduce((s,t)=>s+(t.total||t.trip_comm||0),0);
     // Auto-calculate deductions
     const empDeds=DB.deds.filter(d=>d.period_month===m&&d.period_year===y&&(d.employee_id===e.id||(d.employee_id===''&&d.employee_name===e.name)));
     const autoDed=empDeds.reduce((s,d)=>s+(d.amount||0),0);
