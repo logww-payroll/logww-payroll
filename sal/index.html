@@ -1281,7 +1281,11 @@ function buildSlip(e,L,period){
   // Custom earnings (attendance allowance, adhoc, etc.)
   const empId=e.id||L.employee_id;
   const customEarnsList = m&&y&&empId ? getCustomEarns(empId,m,y).filter(c=>(parseFloat(c.amount)||0)>0) : [];
-  const customTotal = customEarnsList.reduce((s,c)=>s+(parseFloat(c.amount)||0),0);
+  const customEarnsA = customEarnsList.filter(c=>{ const et=DB.earnTypes.find(x=>x.id===c.earn_type_id); return (et?.section||'B')==='A'; });
+  const customEarnsB = customEarnsList.filter(c=>{ const et=DB.earnTypes.find(x=>x.id===c.earn_type_id); return (et?.section||'B')==='B'; });
+  const customTotalA = customEarnsA.reduce((s,c)=>s+(parseFloat(c.amount)||0),0);
+  const customTotalB = customEarnsB.reduce((s,c)=>s+(parseFloat(c.amount)||0),0);
+  const customTotal = customTotalA + customTotalB;
   // Always recalculate live so recoveries/deductions are current
   const net=calcNet(L,m,y);
   const grand=net>0?net+wps+vat:0;
@@ -1305,12 +1309,13 @@ function buildSlip(e,L,period){
     </div>
     <div class="slip-sec">Section A — Fixed salary</div>
     <div class="sr"><span>Basic salary</span><span>${num(basic)}</span></div>
-    <div class="sr tot"><span>Total fixed</span><span>${num(basic)}</span></div>
+    ${customEarnsA.map(c=>`<div class="sr"><span>${c.label}</span><span>${num(c.amount)}</span></div>`).join('')}
+    <div class="sr tot"><span>Total fixed</span><span>${num(basic+customTotalA)}</span></div>
     <div class="slip-sec">Section B — Variable earnings</div>
     <div class="sr"><span>Trip commissions</span><span>${num(trip)}</span></div>
     ${other>0?`<div class="sr"><span>Attendance allowance</span><span>${num(other)}</span></div>`:''}
-    ${customEarnsList.map(c=>`<div class="sr"><span>${c.label}</span><span>${num(c.amount)}</span></div>`).join('')}
-    <div class="sr tot"><span>Total variable</span><span>${num(trip+other+customTotal)}</span></div>
+    ${customEarnsB.map(c=>`<div class="sr"><span>${c.label}</span><span>${num(c.amount)}</span></div>`).join('')}
+    <div class="sr tot"><span>Total variable</span><span>${num(trip+other+customTotalB)}</span></div>
     ${(()=>{
       // Get ledger EMI lines for this employee/period
       const _slipRecs = empId&&m&&y ? DB.recoveries.filter(r=>r.employee_id===empId&&r.period_month===m&&r.period_year===y) : [];
@@ -1329,7 +1334,7 @@ function buildSlip(e,L,period){
         + `<div class="sr tot neg"><span>Total deductions</span><span>(${num(totalDeductions)})</span></div>`;
     })()}
     <div class="slip-sec">Summary</div>
-    <div class="sr"><span>Total earnings (A + B)</span><span>${num(basic+trip+other+customTotal)}</span></div>
+    <div class="sr"><span>Total earnings (A + B)</span><span>${num(basic+customTotalA+trip+other+customTotalB)}</span></div>
     ${adv>0?`<div class="sr neg"><span>Less: deductions</span><span>(${num(adv)})</span></div>`:''}
     <div class="sr"><span>WPS commission</span><span>${num(wps)}</span></div>
     <div class="sr"><span>VAT</span><span>${num(vat)}</span></div>
@@ -2326,7 +2331,7 @@ function renderEarnTypes(){
     <td style="font-weight:500">${et.label}</td>
     <td><span class="badge ${et.recur==='recurring'?'b-dr':'b-st'}">${et.recur==='recurring'?'Recurring':'One-off'}</span></td>
     <td style="font-size:12px;color:var(--text-2)">${et.desc||'—'}</td>
-    <td style="font-size:12px"><span class="tag" style="background:var(--blue-bg);color:var(--blue-text)">Section B</span> ${et.label}</td>
+    <td style="font-size:12px"><span class="tag" style="background:var(--blue-bg);color:var(--blue-text)">Section ${et.section||'B'}</span> ${et.label}</td>
     <td><span class="badge ${et.active?'b-paid':'b-zero'}">${et.active?'Active':'Inactive'}</span></td>
     <td><div style="display:flex;gap:4px">
       <button class="btn xs" onclick="editEarnType('${et.id}')">Edit</button>
@@ -2351,6 +2356,7 @@ function editEarnType(id){
   document.getElementById('earn-type-mt').textContent='Edit earnings type';
   document.getElementById('et-label').value=et.label;
   document.getElementById('et-recur').value=et.recur||'recurring';
+  document.getElementById('et-section').value=et.section||'B';
   document.getElementById('et-desc').value=et.desc||'';
   document.getElementById('modal-earn-type').classList.add('open');
 }
@@ -2362,6 +2368,7 @@ function saveEarnType(){
   const et={
     id:id||uid(), label,
     recur:document.getElementById('et-recur').value,
+    section:document.getElementById('et-section').value||'B',
     desc:document.getElementById('et-desc').value.trim(),
     active:true,
   };
@@ -3742,6 +3749,7 @@ async function delRecovery(recId,ledgerId){
       </div>
       <div class="fgrp"><label>Section on slip</label>
         <select id="et-section">
+          <option value="A">Section A — Fixed salary</option>
           <option value="B">Section B — Variable earnings</option>
         </select>
       </div>
