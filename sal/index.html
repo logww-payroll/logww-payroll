@@ -1298,6 +1298,7 @@ function buildSlip(e,L,period){
       <div class="sf"><label>Work permit</label><span class="mono">${e.work_permit||'—'}</span></div>
       <div class="sf"><label>Labor card</label><span class="mono">${e.labor_card||'—'}</span></div>
       <div class="sf" style="grid-column:span 2"><label>IBAN</label><span class="mono">${e.iban||'—'}</span></div>
+      <div class="sf" style="grid-column:span 2"><label>Email</label><span>${e.email||'—'}</span></div>
       <div class="sf"><label>Days worked</label><span>${L.worked_days||0} / ${L.total_days||30}</span></div>
       <div class="sf"><label>Absence</label><span>${(L.total_days||30)-(L.worked_days||0)}</span></div>
     </div>
@@ -3267,6 +3268,7 @@ function buildEmailHtml(e,L,period){
   +'<tr><td style="color:#666;padding:3px 0">Work Permit</td><td style="text-align:right;font-family:monospace">'+(e.work_permit||'—')+'</td></tr>'
   +'<tr><td style="color:#666;padding:3px 0">Labor Card</td><td style="text-align:right;font-family:monospace">'+(e.labor_card||'—')+'</td></tr>'
   +'<tr><td style="color:#666;padding:3px 0">IBAN</td><td style="text-align:right;font-family:monospace;font-size:10px">'+(e.iban||'—')+'</td></tr>'
+  +'<tr><td style="color:#666;padding:3px 0">Email</td><td style="text-align:right">'+(e.email||'—')+'</td></tr>'
   +'<tr><td style="color:#666;padding:3px 0">Days Worked</td><td style="text-align:right">'+(L.worked_days||0)+' / '+(L.total_days||30)+(absence>0?' ('+absence+' days absence)':'')+'</td></tr>'
   +'</table>'
   +'<table style="width:100%;font-size:12px;border-collapse:collapse;border-top:1px solid #eee">'
