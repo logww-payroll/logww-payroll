@@ -1310,7 +1310,15 @@ function buildSlip(e,L,period){
       <div class="sf"><label>Absence</label><span>${(L.total_days||30)-(L.worked_days||0)}</span></div>
     </div>
     <div class="slip-sec">Section A — Fixed salary</div>
-    <div class="sr"><span>Basic salary</span><span>${num(basic)}</span></div>
+    ${(()=>{
+      const fullBasic=L.basic_salary||e.basic_salary||0;
+      const days=L.worked_days||0; const totalDays=L.total_days||30;
+      const isPartial=days<totalDays&&fullBasic>0;
+      return isPartial
+        ? `<div class="sr"><span>Basic salary</span><span>${num(fullBasic)}</span></div>
+           <div class="sr" style="color:var(--text-2);font-size:11px"><span>× ${days}/${totalDays} days worked</span><span>(${num(fullBasic-basic)})</span></div>`
+        : `<div class="sr"><span>Basic salary</span><span>${num(basic)}</span></div>`;
+    })()}
     ${customEarnsA.map(c=>`<div class="sr"><span>${c.label}</span><span>${num(c.amount)}</span></div>`).join('')}
     <div class="sr tot"><span>Total fixed</span><span>${num(basic+customTotalA)}</span></div>
     <div class="slip-sec">Section B — Variable earnings</div>
