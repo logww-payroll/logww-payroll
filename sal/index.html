@@ -1218,7 +1218,8 @@ async function savePayroll(){
   run.employee_count=lines.filter(l=>l.net_payable>0).length;
   // Auto-record ledger recoveries for this period
   lines.forEach(L=>{
-    const empLedger=DB.ledger.filter(l=>l.employee_id===L.employee_id&&l.balance>0);
+    const _recThisPeriod=DB.recoveries.filter(r=>r.period_month===m&&r.period_year===y&&r.employee_id===L.employee_id);
+    const empLedger=DB.ledger.filter(l=>l.employee_id===L.employee_id&&((l.balance||0)>0||_recThisPeriod.some(r=>r.ledger_id===l.id)));
     empLedger.forEach(l=>{
       const already=DB.recoveries.find(r=>r.ledger_id===l.id&&r.period_month===m&&r.period_year===y);
       if(already) return;
@@ -1280,8 +1281,8 @@ function buildSlip(e,L,period){
   const empId=e.id||L.employee_id;
   const customEarnsList = m&&y&&empId ? getCustomEarns(empId,m,y).filter(c=>(parseFloat(c.amount)||0)>0) : [];
   const customTotal = customEarnsList.reduce((s,c)=>s+(parseFloat(c.amount)||0),0);
-  // Net from saved data or recalculate
-  const net=parseFloat(L.net_payable)||calcNet(L);
+  // Always recalculate live so recoveries/deductions are current
+  const net=calcNet(L,m,y);
   const grand=net>0?net+wps+vat:0;
   // Get detailed trip lines and ded lines for memo
   const tripLines=m&&y?DB.trips.filter(t=>t.period_month===m&&t.period_year===y&&t.employee_id===empId):[];
@@ -1310,8 +1311,9 @@ function buildSlip(e,L,period){
     <div class="sr tot"><span>Total variable</span><span>${num(trip+other+customTotal)}</span></div>
     ${(()=>{
       // Get ledger EMI lines for this employee/period
-      const ledgerDeds = empId&&m&&y ? DB.ledger.filter(l=>(l.employee_id===empId)&&l.balance>0).map(l=>{
-        const rec = DB.recoveries.find(r=>r.ledger_id===l.id&&r.period_month===m&&r.period_year===y);
+      const _slipRecs = empId&&m&&y ? DB.recoveries.filter(r=>r.employee_id===empId&&r.period_month===m&&r.period_year===y) : [];
+      const ledgerDeds = empId&&m&&y ? DB.ledger.filter(l=>(l.employee_id===empId)&&((l.balance||0)>0||_slipRecs.some(r=>r.ledger_id===l.id))).map(l=>{
+        const rec = _slipRecs.find(r=>r.ledger_id===l.id);
         const amt = rec ? rec.amount : (l.emi&&l.emi>0 ? Math.min(l.emi,l.balance) : 0);
         return amt>0 ? {label:`${l.type_label||l.type}: ${l.description}`, amount:amt} : null;
       }).filter(Boolean) : [];
