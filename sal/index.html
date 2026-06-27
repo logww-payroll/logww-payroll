@@ -269,7 +269,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
 <div class="page" id="page-employees">
   <div class="ph"><div><div class="ph-t">Employees</div><div class="ph-s" id="emp-s"></div></div>
     <button class="btn pri" onclick="openEmpModal()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add employee</button></div>
-  <div class="tw"><table><thead><tr><th>Name</th><th>Type</th><th>Designation</th><th>Work permit</th><th>Basic salary</th><th>IBAN</th><th>Email</th><th></th></tr></thead><tbody id="emp-tb"></tbody></table></div>
+  <div class="tw"><table><thead><tr><th>Name</th><th>Type</th><th>Designation</th><th>Work permit</th><th>Basic salary</th><th>Other allowance</th><th>IBAN</th><th>Email</th><th></th></tr></thead><tbody id="emp-tb"></tbody></table></div>
 </div>
 
 <!-- RATES -->
@@ -512,6 +512,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
       <div class="fgrp"><label>Labor card no.</label><input type="text" id="emp-lc" class="mono"></div>
       <div class="fgrp s2"><label>IBAN / Account</label><input type="text" id="emp-iban" class="mono"></div>
       <div class="fgrp"><label>Basic salary (AED/month)</label><input type="number" id="emp-basic" value="0"></div>
+      <div class="fgrp"><label>Other allowance (AED/month)</label><input type="number" id="emp-allowance" value="0" placeholder="0"></div>
       <div class="fgrp"><label>Email</label><input type="email" id="emp-email"></div>
     </div>
     <div class="modal-ft"><button class="btn" onclick="closeM('modal-emp')">Cancel</button><button class="btn pri" onclick="saveEmp()">Save</button></div>
@@ -1079,7 +1080,8 @@ function buildRunTable(){
       // Always recalculate these from live data
       employee_id:e.id, employee_name:e.name,
       basic_salary:e.basic_salary,
-      other_commission:ex?.other_commission||0,
+      // Use saved other_commission if exists, else auto from employee other_allowance
+      other_commission:ex ? (ex.other_commission??e.other_allowance||0) : (e.other_allowance||0),
       // Respect saved trip_commission if run already saved; only auto-calc for new runs
       trip_commission:ex ? (ex.trip_commission??autoTrip) : autoTrip,
       advances:totalDed,              // fresh from deductions + ledger EMI
@@ -1447,11 +1449,11 @@ function renderEmps(){
   </tr>`).join('');
 }
 function openEmpModal(){clearEmpF();document.getElementById('emp-mt').textContent='Add employee';document.getElementById('modal-emp').classList.add('open');}
-function clearEmpF(){['emp-id','emp-name','emp-desig','emp-wp','emp-lc','emp-iban','emp-email'].forEach(id=>document.getElementById(id).value='');document.getElementById('emp-basic').value='0';document.getElementById('emp-sheet').value='Driver';}
-function editEmp(id){const e=DB.employees.find(x=>x.id===id);if(!e)return;document.getElementById('emp-id').value=e.id;document.getElementById('emp-name').value=e.name;document.getElementById('emp-sheet').value=e.sheet;document.getElementById('emp-desig').value=e.designation||'';document.getElementById('emp-wp').value=e.work_permit||'';document.getElementById('emp-lc').value=e.labor_card||'';document.getElementById('emp-iban').value=e.iban||'';document.getElementById('emp-basic').value=e.basic_salary||0;document.getElementById('emp-email').value=e.email||'';document.getElementById('emp-mt').textContent='Edit employee';document.getElementById('modal-emp').classList.add('open');}
+function clearEmpF(){['emp-id','emp-name','emp-desig','emp-wp','emp-lc','emp-iban','emp-email'].forEach(id=>document.getElementById(id).value='');document.getElementById('emp-basic').value='0';document.getElementById('emp-allowance').value='0';document.getElementById('emp-sheet').value='Driver';}
+function editEmp(id){const e=DB.employees.find(x=>x.id===id);if(!e)return;document.getElementById('emp-id').value=e.id;document.getElementById('emp-name').value=e.name;document.getElementById('emp-sheet').value=e.sheet;document.getElementById('emp-desig').value=e.designation||'';document.getElementById('emp-wp').value=e.work_permit||'';document.getElementById('emp-lc').value=e.labor_card||'';document.getElementById('emp-iban').value=e.iban||'';document.getElementById('emp-basic').value=e.basic_salary||0;document.getElementById('emp-allowance').value=e.other_allowance||0;document.getElementById('emp-email').value=e.email||'';document.getElementById('emp-mt').textContent='Edit employee';document.getElementById('modal-emp').classList.add('open');}
 function saveEmp(){
   const id=document.getElementById('emp-id').value;
-  const e={id:id||uid(),name:document.getElementById('emp-name').value,sheet:document.getElementById('emp-sheet').value,designation:document.getElementById('emp-desig').value,work_permit:document.getElementById('emp-wp').value,labor_card:document.getElementById('emp-lc').value,iban:document.getElementById('emp-iban').value,basic_salary:parseFloat(document.getElementById('emp-basic').value)||0,email:document.getElementById('emp-email').value||''};
+  const e={id:id||uid(),name:document.getElementById('emp-name').value,sheet:document.getElementById('emp-sheet').value,designation:document.getElementById('emp-desig').value,work_permit:document.getElementById('emp-wp').value,labor_card:document.getElementById('emp-lc').value,iban:document.getElementById('emp-iban').value,basic_salary:parseFloat(document.getElementById('emp-basic').value)||0,other_allowance:parseFloat(document.getElementById('emp-allowance').value)||0,email:document.getElementById('emp-email').value||''};
   if(id) DB.employees=DB.employees.map(x=>x.id===id?e:x);
   else DB.employees.push(e);
   save();
@@ -1464,7 +1466,7 @@ function saveEmp(){
         headers:{apikey:sbKey,Authorization:'Bearer '+authToken,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
         body:JSON.stringify({id:e.id,name:e.name,sheet:e.sheet,designation:e.designation||'',
           work_permit:e.work_permit||'',labor_card:e.labor_card||'',iban:e.iban||'',
-          basic_salary:e.basic_salary||0,email:e.email})
+          basic_salary:e.basic_salary||0,other_allowance:e.other_allowance||0,email:e.email})
       }).then(r=>r.ok?toast('Saved',e.name+' updated.','success',2000):console.error('Employee push failed',r.status));
     });}
   } else {
@@ -1556,7 +1558,7 @@ async function pushSB(run,lines){
     for(const e of DB.employees){
       await post('employees',{id:e.id,name:e.name,sheet:e.sheet,designation:e.designation||'',
         work_permit:e.work_permit||'',labor_card:e.labor_card||'',iban:e.iban||'',
-        basic_salary:e.basic_salary||0,email:e.email||''});
+        basic_salary:e.basic_salary||0,other_allowance:e.other_allowance||0,email:e.email||''});
     }
     // Ledger + recoveries (all entries, not just this period)
     for(const l of DB.ledger){
@@ -2110,7 +2112,7 @@ async function syncFromSupabase(){
         missingEmails.forEach(e=>fetch(`${sbUrl}/rest/v1/employees`,{method:'POST',headers:h2,
           body:JSON.stringify({id:e.id,name:e.name,sheet:e.sheet,designation:e.designation||'',
             work_permit:e.work_permit||'',labor_card:e.labor_card||'',iban:e.iban||'',
-            basic_salary:e.basic_salary||0,email:e.email})}).catch(()=>{}));
+            basic_salary:e.basic_salary||0,other_allowance:e.other_allowance||0,email:e.email})}).catch(()=>{}));
         console.log(`Auto-pushed ${missingEmails.length} employee emails to Supabase`);
       }
     }
@@ -2588,7 +2590,7 @@ async function pushAllToSupabase(){
     for(const e of DB.employees){
       const r=await post('employees',{id:e.id,name:e.name,sheet:e.sheet,designation:e.designation||'',
         work_permit:e.work_permit||'',labor_card:e.labor_card||'',iban:e.iban||'',
-        basic_salary:e.basic_salary||0,email:e.email||''});
+        basic_salary:e.basic_salary||0,other_allowance:e.other_allowance||0,email:e.email||''});
       r.ok?pushed++:errors++;
     }
     // Push commission rates
