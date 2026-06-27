@@ -310,7 +310,7 @@ tbody td{padding:8px 12px;vertical-align:middle}
     <div class="sdiv">Connection</div>
     <div class="fg" style="margin-bottom:1rem">
       <div class="fgrp s2"><label>Project URL</label><input type="text" id="sb-url" class="mono" placeholder="https://xxxxxxxxxxxx.supabase.co" oninput="saveSB()"></div>
-      <div class="fgrp s2"><label>Publishable key</label><input type="text" id="sb-key" class="mono" placeholder="sb_publishable_..." oninput="saveSB()"></div>
+      <div class="fgrp s2"><label>Anon / API key</label><input type="text" id="sb-key" class="mono" placeholder="eyJ..." oninput="saveSB()"></div>
     </div>
     <div class="btn-row">
       <button class="btn pri" onclick="testSB()">Test connection</button>
@@ -1508,6 +1508,9 @@ function delRate(id){showConfirm('Delete rate','This commission rate will be rem
 
 /* ─── SETTINGS ─── */
 function loadSettings(){
+  // Clear stale publishable key from localStorage
+  const storedKey=localStorage.getItem('sb_key')||'';
+  if(storedKey.startsWith('sb_publishable_')) localStorage.removeItem('sb_key');
   // Load from localStorage if user has overridden, otherwise use defaults
 sbUrl=localStorage.getItem('sb_url')||sbUrl;
 sbKey=localStorage.getItem('sb_key')||sbKey;
@@ -2609,22 +2612,26 @@ async function pushAllToSupabase(){
   const h={apikey:sbKey,Authorization:'Bearer '+authToken,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
   const post=(table,body)=>fetch(`${sbUrl}/rest/v1/${table}`,{method:'POST',headers:h,body:JSON.stringify(body)});
 
-  let pushed=0, errors=0;
+  let pushed=0, errors=0, errorLog=[];
   const btn=document.getElementById('push-all-btn');
   if(btn){btn.disabled=true;btn.textContent='Pushing...';}
+  const postLogged=async(table,body)=>{
+    const r=await fetch(`${sbUrl}/rest/v1/${table}`,{method:'POST',headers:h,body:JSON.stringify(body)});
+    if(!r.ok){const txt=await r.text();errorLog.push(`${table}: ${r.status} ${txt.slice(0,80)}`);errors++;}
+    else pushed++;
+    return r;
+  };
 
   try{
     // Push employees
     for(const e of DB.employees){
-      const r=await post('employees',{id:e.id,name:e.name,sheet:e.sheet,designation:e.designation||'',
+      await postLogged('employees',{id:e.id,name:e.name,sheet:e.sheet,designation:e.designation||'',
         work_permit:e.work_permit||'',labor_card:e.labor_card||'',iban:e.iban||'',
         basic_salary:e.basic_salary||0,housing_allowance:e.housing_allowance||0,transport_allowance:e.transport_allowance||0,other_allowance:e.other_allowance||0,email:e.email||''});
-      r.ok?pushed++:errors++;
     }
     // Push commission rates
     for(const r of DB.rates){
-      const res=await post('commission_rates',{id:r.id,customer:r.customer||'',route:r.route,rate:r.rate});
-      res.ok?pushed++:errors++;
+      await postLogged('commission_rates',{id:r.id,customer:r.customer||'',route:r.route,rate:r.rate});
     }
     // Push all payroll runs and lines
     for(const run of DB.runs){
@@ -2644,24 +2651,24 @@ async function pushAllToSupabase(){
     }
     // Push all trips
     for(const t of DB.trips){
-      const r=await post('trip_log',{id:t.id,period_month:t.period_month,period_year:t.period_year,
+      await postLogged('trip_log',{id:t.id,period_month:t.period_month,period_year:t.period_year,
         employee_id:t.employee_id,employee_name:t.employee_name,trip_date:t.trip_date||null,
         truck:t.truck||'',route:t.route||'',customer:t.customer||'',
         from_loc:t.from_loc||'',to_loc:t.to_loc||'',notes:t.notes||'',
         trip_comm:t.trip_comm||0,border_exp:t.border_exp||0,diesel_exp:t.diesel_exp||0,
         other_exp:t.other_exp||0,total:t.total||0});
-      r.ok?pushed++:errors++;
     }
     // Push all deductions
     for(const d of DB.deds){
-      const r=await post('deductions',{id:d.id,period_month:d.period_month,period_year:d.period_year,
+      await postLogged('deductions',{id:d.id,period_month:d.period_month,period_year:d.period_year,
         employee_id:d.employee_id,employee_name:d.employee_name,ded_date:d.ded_date||null,
         category:d.category||'other',description:d.description||'',
         reference:d.reference||'',amount:d.amount||0,traffic_points:d.traffic_points||0});
-      r.ok?pushed++:errors++;
     }
 
-    toast('Sync complete',`${pushed} records pushed to Supabase.${errors?' '+errors+' errors — check console.':''}`,errors?'warn':'success',5000);
+    if(errorLog.length) console.error('Push errors:\n'+errorLog.join('\n'));
+    toast('Sync complete',`${pushed} records pushed.${errors?' '+errors+' errors — opening console for details.':''}`,errors?'warn':'success',5000);
+    if(errorLog.length) setTimeout(()=>alert('Push errors (first 5):\n\n'+errorLog.slice(0,5).join('\n')),500);
   }catch(e){
     toast('Push failed',e.message,'error');
     console.error('Push all error:',e);
