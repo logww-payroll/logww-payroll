@@ -1058,14 +1058,18 @@ function buildRunTable(){
     const autoDed=empDeds.reduce((s,d)=>s+(d.amount||0),0);
     const dedNotes=empDeds.map(d=>`${catLabel(d.category)}: ${d.description}`).join('; ');
     // Add ledger EMI recoveries for this period
-    const empLedger = DB.ledger.filter(l=>(l.employee_id===e.id||(l.employee_id===''&&l.employee_name===e.name))&&l.balance>0);
     const alreadyRecovered = DB.recoveries.filter(r=>r.period_month===m&&r.period_year===y&&r.employee_id===e.id);
+    const empLedger = DB.ledger.filter(l=>{
+      if(!(l.employee_id===e.id||(l.employee_id===''&&l.employee_name===e.name))) return false;
+      // Include if balance still outstanding OR already has a recovery this period (could be cleared this run)
+      return (l.balance||0)>0 || alreadyRecovered.some(r=>r.ledger_id===l.id);
+    });
     const ledgerEMI = empLedger.reduce((s,l)=>{
       const alreadyRec = alreadyRecovered.find(r=>r.ledger_id===l.id);
       if(alreadyRec) return s + alreadyRec.amount;
       return s + Math.min(l.emi||0, l.balance||0);
     }, 0);
-    const ledgerNotes = empLedger.filter(l=>l.balance>0).map(l=>`${l.type_label}: ${l.description} (bal: AED ${l.balance.toFixed(2)})`).join('; ');
+    const ledgerNotes = empLedger.filter(l=>(l.balance||0)>0||alreadyRecovered.some(r=>r.ledger_id===l.id)).map(l=>`${l.type_label}: ${l.description} (bal: AED ${l.balance.toFixed(2)})`).join('; ');
     const totalDed = autoDed + ledgerEMI;
     const allDedNotes = [dedNotes, ledgerNotes].filter(Boolean).join('; ');
 
