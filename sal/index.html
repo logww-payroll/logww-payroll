@@ -1564,7 +1564,9 @@ async function pushSB(run,lines){
     for(const t of DB.trips.filter(x=>x.period_month===m&&x.period_year===y)){
       await post('trip_log',{id:t.id,period_month:t.period_month,period_year:t.period_year,
         employee_id:t.employee_id,employee_name:t.employee_name,trip_date:t.trip_date||null,
-        truck:t.truck||'',route:t.route||'',customer:t.customer||'',trip_comm:t.trip_comm||0,
+        truck:t.truck||'',route:t.route||'',customer:t.customer||'',
+        from_loc:t.from_loc||'',to_loc:t.to_loc||'',notes:t.notes||'',
+        trip_comm:t.trip_comm||0,
         border_exp:t.border_exp||0,diesel_exp:t.diesel_exp||0,other_exp:t.other_exp||0,
         total:t.total||0});
     }
@@ -2639,6 +2641,7 @@ async function pushAllToSupabase(){
       const r=await post('trip_log',{id:t.id,period_month:t.period_month,period_year:t.period_year,
         employee_id:t.employee_id,employee_name:t.employee_name,trip_date:t.trip_date||null,
         truck:t.truck||'',route:t.route||'',customer:t.customer||'',
+        from_loc:t.from_loc||'',to_loc:t.to_loc||'',notes:t.notes||'',
         trip_comm:t.trip_comm||0,border_exp:t.border_exp||0,diesel_exp:t.diesel_exp||0,
         other_exp:t.other_exp||0,total:t.total||0});
       r.ok?pushed++:errors++;
