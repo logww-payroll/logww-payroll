@@ -1368,7 +1368,7 @@ function buildSlip(e,L,period){
     <div class="slip-net"><span class="slip-net-l">Net payable</span><span class="slip-net-v">${net>0?aed(net):'AED 0.00'}</span></div>
     ${(tripLines.length||dedLines.length||trip||adv)?`<div class="slip-memo">
       <div class="slip-memo-t">Additional memo — commission & deduction detail</div>
-      ${tripLines.length?`<div style="font-size:10px;font-weight:600;color:var(--text-2);margin:5px 0 3px">Trips</div>${tripLines.map(t=>`<div class="slip-memo-r"><span>${fmtDate(t.trip_date)} · ${t.route}${t.truck?' · '+t.truck:''}${t.from_loc?' · '+t.from_loc+' → '+t.to_loc:''}</span><span>${num(t.trip_comm)}</span></div>`).join('')}`
+      ${tripLines.length?`<div style="font-size:10px;font-weight:600;color:var(--text-2);margin:5px 0 3px">Trips</div>${tripLines.map(t=>`<div class="slip-memo-r"><span>${fmtDate(t.trip_date)} · ${t.route}${t.truck?' · '+t.truck:''}${t.from_loc?' · '+t.from_loc+' → '+t.to_loc:''}</span><span>${num(t.total||t.trip_comm)}</span></div>`).join('')}`
         :(trip?`<div class="slip-memo-r"><span>Trip commissions</span><span>${num(trip)}</span></div>`:'')
       }
       ${other?`<div class="slip-memo-r"><span>Attendance allowance</span><span>${num(other)}</span></div>`:''}
