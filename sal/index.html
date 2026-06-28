@@ -1072,7 +1072,7 @@ function buildRunTable(){
       if(alreadyRec) return s + alreadyRec.amount;
       return s + Math.min(l.emi||0, l.balance||0);
     }, 0);
-    const ledgerNotes = empLedger.filter(l=>(l.balance||0)>0||alreadyRecovered.some(r=>r.ledger_id===l.id)).map(l=>`${l.type_label}: ${l.description} (bal: AED ${l.balance.toFixed(2)})`).join('; ');
+    const ledgerNotes = empLedger.filter(l=>((l.emi||0)>0||alreadyRecovered.some(r=>r.ledger_id===l.id))&&((l.balance||0)>0||alreadyRecovered.some(r=>r.ledger_id===l.id))).map(l=>`${l.type_label}: ${l.description} (bal: AED ${l.balance.toFixed(2)})`).join('; ');
     const totalDed = autoDed + ledgerEMI;
     const allDedNotes = [dedNotes, ledgerNotes].filter(Boolean).join('; ');
 
@@ -1349,6 +1349,7 @@ function buildSlip(e,L,period){
       const ledgerDeds = empId&&m&&y ? DB.ledger.filter(l=>(l.employee_id===empId)&&((l.balance||0)>0||_slipRecs.some(r=>r.ledger_id===l.id))).map(l=>{
         const rec = _slipRecs.find(r=>r.ledger_id===l.id);
         const amt = rec ? rec.amount : (l.emi&&l.emi>0 ? Math.min(l.emi,l.balance) : 0);
+        if(!amt&&!rec) return ''; // skip zero-EMI entries with no recovery this period
         return amt>0 ? {label:`${l.type_label||l.type}: ${l.description}`, amount:amt} : null;
       }).filter(Boolean) : [];
       const totalDeductions = (parseFloat(adv)||0) || (dedLines.reduce((s,d)=>s+d.amount,0) + ledgerDeds.reduce((s,d)=>s+d.amount,0));
