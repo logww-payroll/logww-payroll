@@ -1945,7 +1945,9 @@ function confirmImport(){
   if(sbUrl&&sbKey){
     const h={apikey:sbKey,Authorization:'Bearer '+sbKey,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
     if(document.getElementById('opt-trips').checked){
-      iData.trips.forEach(t=>fetch(sbUrl+'/rest/v1/trip_log',{method:'POST',headers:h,body:JSON.stringify({...t,period_month:m,period_year:y})}));
+      // Delete existing trips for this period first, then insert fresh
+      fetch(sbUrl+'/rest/v1/trip_log?period_month=eq.'+m+'&period_year=eq.'+y,{method:'DELETE',headers:{...h,'Prefer':'return=minimal'}})
+        .then(()=>iData.trips.forEach(t=>fetch(sbUrl+'/rest/v1/trip_log',{method:'POST',headers:h,body:JSON.stringify({...t,period_month:m,period_year:y})})));
     }
   }
   toast('Import complete',msg.join(' · '),'success',5000);
