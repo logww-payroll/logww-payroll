@@ -2121,80 +2121,40 @@ async function syncFromSupabase(){
       ratesR.ok?ratesR.json():[],
     ]);
 
-    // ── SMART MERGE: Supabase wins only if it has MORE data ──
-    // Employees: use Supabase if it has employees, but MERGE emails/details
-    // that may have been added locally
-    if(sbEmps.length){
-      DB.employees = sbEmps.map(se=>{
-        const local = DB.employees.find(le=>le.id===se.id||le.name===se.name);
-        return {
-          id:se.id, name:se.name, sheet:se.sheet||local?.sheet||'Driver',
-          designation:se.designation||local?.designation||'',
-          work_permit:se.work_permit||local?.work_permit||'',
-          labor_card:se.labor_card||local?.labor_card||'',
-          iban:se.iban||local?.iban||'',
-          basic_salary:parseFloat(se.basic_salary)||local?.basic_salary||0,
-          housing_allowance:parseFloat(se.housing_allowance)>0?parseFloat(se.housing_allowance):(local?.housing_allowance||0),
-          transport_allowance:parseFloat(se.transport_allowance)>0?parseFloat(se.transport_allowance):(local?.transport_allowance||0),
-          other_allowance:parseFloat(se.other_allowance)>0?parseFloat(se.other_allowance):(local?.other_allowance||0),
-          // Always prefer whichever has email — local wins if Supabase is empty
-          email:se.email||local?.email||'',
-        };
-      });
-      // Push any locally-stored emails back to Supabase if Supabase is missing them
-      const missingEmails = DB.employees.filter(e=>e.email&&sbEmps.find(se=>se.id===e.id&&!se.email));
-      if(missingEmails.length&&sbUrl&&sbKey){
-        const h2={apikey:sbKey,Authorization:'Bearer '+authToken,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
-        missingEmails.forEach(e=>fetch(`${sbUrl}/rest/v1/employees`,{method:'POST',headers:h2,
-          body:JSON.stringify({id:e.id,name:e.name,sheet:e.sheet,designation:e.designation||'',
-            work_permit:e.work_permit||'',labor_card:e.labor_card||'',iban:e.iban||'',
-            basic_salary:e.basic_salary||0,housing_allowance:e.housing_allowance||0,transport_allowance:e.transport_allowance||0,other_allowance:e.other_allowance||0,email:e.email})}).catch(()=>{}));
-        console.log(`Auto-pushed ${missingEmails.length} employee emails to Supabase`);
-      }
-    }
+    // ── SUPABASE IS SOLE SOURCE OF TRUTH — replace everything from DB ──
+    DB.employees = sbEmps.map(se=>({
+      id:se.id, name:se.name, sheet:se.sheet||'Driver',
+      designation:se.designation||'', work_permit:se.work_permit||'',
+      labor_card:se.labor_card||'', iban:se.iban||'',
+      basic_salary:parseFloat(se.basic_salary)||0,
+      housing_allowance:parseFloat(se.housing_allowance)||0,
+      transport_allowance:parseFloat(se.transport_allowance)||0,
+      other_allowance:parseFloat(se.other_allowance)||0,
+      email:se.email||'',
+    }));
 
-    // Payroll runs: merge — keep local runs not yet in Supabase
-    if(sbRuns.length){
-      const sbRunIds = new Set(sbRuns.map(r=>r.id));
-      const localOnly = DB.runs.filter(r=>!sbRunIds.has(r.id));
-      DB.runs = [...sbRuns, ...localOnly];
-    }
+    DB.runs = sbRuns;
 
-    // Payroll lines: merge by run_id
-    if(sbLines.length){
-      const sbLineIds = new Set(sbLines.map(l=>l.id));
-      const localOnly = DB.lines.filter(l=>!sbLineIds.has(l.id));
-      DB.lines = [...sbLines.map(l=>({...l,
-        trip_commission:parseFloat(l.trip_commission)||0,
-        other_commission:parseFloat(l.other_commission)||0,
-        advances:parseFloat(l.advances)||0,
-        net_payable:parseFloat(l.net_payable)||0,
-        total_fixed:parseFloat(l.total_fixed)||0,
-        total_variable:parseFloat(l.total_variable)||0,
-      })), ...localOnly];
-    }
+    DB.lines = sbLines.map(l=>({...l,
+      trip_commission:parseFloat(l.trip_commission)||0,
+      other_commission:parseFloat(l.other_commission)||0,
+      advances:parseFloat(l.advances)||0,
+      net_payable:parseFloat(l.net_payable)||0,
+      total_fixed:parseFloat(l.total_fixed)||0,
+      total_variable:parseFloat(l.total_variable)||0,
+    }));
 
-    // Trips: merge by id
-    if(sbTrips.length){
-      const sbIds = new Set(sbTrips.map(t=>t.id));
-      const localOnly = DB.trips.filter(t=>!sbIds.has(t.id));
-      DB.trips = [...sbTrips.map(t=>({...t,
-        trip_comm:parseFloat(t.trip_comm)||0,
-        border_exp:parseFloat(t.border_exp)||0,
-        diesel_exp:parseFloat(t.diesel_exp)||0,
-        other_exp:parseFloat(t.other_exp)||0,
-        total:parseFloat(t.total)||0,
-      })), ...localOnly];
-    }
+    DB.trips = sbTrips.map(t=>({...t,
+      trip_comm:parseFloat(t.trip_comm)||0,
+      border_exp:parseFloat(t.border_exp)||0,
+      diesel_exp:parseFloat(t.diesel_exp)||0,
+      other_exp:parseFloat(t.other_exp)||0,
+      total:parseFloat(t.total)||0,
+    }));
 
-    // Deductions: merge by id
-    if(sbDeds.length){
-      const sbIds = new Set(sbDeds.map(d=>d.id));
-      const localOnly = DB.deds.filter(d=>!sbIds.has(d.id));
-      DB.deds = [...sbDeds.map(d=>({...d,amount:parseFloat(d.amount)||0})), ...localOnly];
-    }
+    DB.deds = sbDeds.map(d=>({...d, amount:parseFloat(d.amount)||0}));
 
-    // Data is in memory (DB object) — no localStorage
+    // Data lives only in memory — Supabase is the source of truth
 
     const total = sbEmps.length+sbRuns.length+sbLines.length+sbTrips.length;
     document.getElementById('conn-dot').className='dot ok';
