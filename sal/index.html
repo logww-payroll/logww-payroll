@@ -2608,6 +2608,13 @@ async function pushAllToSupabase(){
   const h={apikey:sbKey,Authorization:'Bearer '+authToken,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
   const post=(table,body)=>fetch(`${sbUrl}/rest/v1/${table}`,{method:'POST',headers:h,body:JSON.stringify(body)});
 
+  // Safety check — warn if local memory is sparse (likely blank slate after fresh login)
+  const totalLocal = DB.employees.length + DB.trips.length + DB.ledger.length;
+  if(totalLocal < 5){
+    toast('Push blocked','Local data appears empty ('+totalLocal+' records). Login pulls data from Supabase — pushing now would overwrite Supabase with nothing. Refresh and login first.','warn',8000);
+    return;
+  }
+
   let pushed=0, errors=0, errorLog=[];
   const btn=document.getElementById('push-all-btn');
   if(btn){btn.disabled=true;btn.textContent='Pushing...';}
