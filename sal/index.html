@@ -1943,11 +1943,18 @@ function confirmImport(){
   save();
   // Also push to Supabase if connected
   if(sbUrl&&sbKey){
-    const h={apikey:sbKey,Authorization:'Bearer '+sbKey,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
+    // Use auth token so RLS allows DELETE
+    let authToken=sbKey;
+    try{const {data:{session}}=await supabaseClient.auth.getSession();if(session?.access_token)authToken=session.access_token;}catch(e){}
+    const h={apikey:sbKey,Authorization:'Bearer '+authToken,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
     if(document.getElementById('opt-trips').checked){
-      // Delete existing trips for this period first, then insert fresh
-      fetch(sbUrl+'/rest/v1/trip_log?period_month=eq.'+m+'&period_year=eq.'+y,{method:'DELETE',headers:{...h,'Prefer':'return=minimal'}})
-        .then(()=>iData.trips.forEach(t=>fetch(sbUrl+'/rest/v1/trip_log',{method:'POST',headers:h,body:JSON.stringify({...t,period_month:m,period_year:y})})));
+      // Delete ALL existing trips for this period first (await so no race condition)
+      const delR=await fetch(sbUrl+'/rest/v1/trip_log?period_month=eq.'+m+'&period_year=eq.'+y,{method:'DELETE',headers:{...h,'Prefer':'return=minimal'}});
+      if(!delR.ok) console.warn('Trip delete failed:',delR.status,await delR.text());
+      // Then insert fresh
+      for(const t of iData.trips){
+        await fetch(sbUrl+'/rest/v1/trip_log',{method:'POST',headers:h,body:JSON.stringify({...t,period_month:m,period_year:y})});
+      }
     }
   }
   toast('Import complete',msg.join(' · '),'success',5000);
