@@ -1560,7 +1560,7 @@ async function pushSB(run,lines){
     // Payroll run + lines
     await post('payroll_runs',{id:run.id,period_month:run.period_month,period_year:run.period_year,
       total_net:run.total_net||0,total_gross:run.total_gross||0,employee_count:run.employee_count||0,
-      status:run.status||'',paid_date:run.paid_date||null,created_at:run.created_at||new Date().toISOString()});
+      created_at:run.created_at||new Date().toISOString()});
     for(const L of lines){
       await post('payroll_lines',{id:L.id,run_id:L.run_id,employee_id:L.employee_id,employee_name:L.employee_name,
         worked_days:L.worked_days||0,total_days:L.total_days||30,basic_salary:L.basic_salary||0,
@@ -2649,7 +2649,7 @@ async function pushAllToSupabase(){
     }
     // Push all payroll runs and lines
     for(const run of DB.runs){
-      await post('payroll_runs',{id:run.id,period_month:run.period_month,period_year:run.period_year,
+      await postLogged('payroll_runs',{id:run.id,period_month:run.period_month,period_year:run.period_year,
         total_net:run.total_net||0,total_gross:run.total_gross||0,
         employee_count:run.employee_count||0,created_at:run.created_at||new Date().toISOString()});
       const lines=DB.lines.filter(l=>l.run_id===run.id);
@@ -3552,11 +3552,31 @@ function saveLedgerEntry(){
       attachments:[..._ledgerAttachments],
       status:'active',created_at:new Date().toISOString()});
   }
+  // Immediately push to Supabase
+  if(sbUrl&&sbKey){
+    const entry=id?DB.ledger.find(x=>x.id===id):DB.ledger[DB.ledger.length-1];
+    if(entry){
+      const h={apikey:sbKey,Authorization:'Bearer '+sbKey,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
+      fetch(sbUrl+'/rest/v1/employee_ledger',{method:'POST',headers:h,body:JSON.stringify({
+        id:entry.id,employee_id:entry.employee_id,employee_name:entry.employee_name,
+        date:entry.date||null,type:entry.type,type_label:entry.type_label,
+        description:entry.description||'',reference:entry.reference||'',
+        original_amount:entry.original_amount||0,balance:entry.balance||0,
+        emi:entry.emi||0,start_month:entry.start_month||1,start_year:entry.start_year||2026,
+        status:entry.status||'active',created_at:entry.created_at||new Date().toISOString()
+      })}).catch(e=>console.warn('Ledger sync error:',e));
+    }
+  }
   save();closeM('modal-ledger');renderLedger();
 }
 
 async function delLedger(id){
   if(!await showConfirm('Delete payable','This will permanently remove the payable and all its recovery records.','Delete','btn dan','danger'))return;
+  if(sbUrl&&sbKey){
+    const h={apikey:sbKey,Authorization:'Bearer '+sbKey,'Prefer':'return=minimal'};
+    fetch(sbUrl+'/rest/v1/employee_ledger?id=eq.'+id,{method:'DELETE',headers:h}).catch(e=>console.warn('Ledger delete error:',e));
+    fetch(sbUrl+'/rest/v1/ledger_recoveries?ledger_id=eq.'+id,{method:'DELETE',headers:h}).catch(e=>console.warn('Recovery delete error:',e));
+  }
   DB.ledger=DB.ledger.filter(l=>l.id!==id);
   DB.recoveries=DB.recoveries.filter(r=>r.ledger_id!==id);
   save();renderLedger();
