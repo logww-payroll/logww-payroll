@@ -1921,7 +1921,7 @@ function renderImportPreview(){
   document.getElementById('imp-options').style.display='block';
   monthSels('imp-month','imp-year');
 }
-function confirmImport(){
+async function confirmImport(){
   const m=getM('imp-month'),y=getY('imp-year');const msg=[];
   // Use _lastImportData as backup in case importData was reset
   const iData = (importData.trips.length||importData.employees.length||importData.rates.length||importData.deductions.length)
