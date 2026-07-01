@@ -1216,14 +1216,8 @@ async function savePayroll(){
   }
   let run=DB.runs.find(r=>r.period_month===m&&r.period_year===y);
   if(run){
-    // Confirm overwrite
-    const confirmed=await new Promise(res=>{
-      if(!confirm(`A payroll run for ${MONTHS[m-1]} ${y} already exists.\n\nOverwrite it with the current figures?`)){res(false);return;}
-      res(true);
-    });
-    if(!confirmed){toast('Cancelled','Payroll run not overwritten.','info');return;}
+    // Just replace lines — save payroll always allows editing until marked paid
     DB.lines=DB.lines.filter(l=>l.run_id!==run.id);
-    // Also delete existing lines from Supabase
     if(sbUrl&&sbKey){
       let tok=sbKey;try{const{data:{session}}=await supabaseClient.auth.getSession();if(session?.access_token)tok=session.access_token;}catch(e){}
       const h={apikey:sbKey,Authorization:'Bearer '+tok,'Prefer':'return=minimal'};
