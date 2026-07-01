@@ -2154,6 +2154,18 @@ async function syncFromSupabase(){
 
     DB.deds = sbDeds.map(d=>({...d, amount:parseFloat(d.amount)||0}));
 
+    DB.ledger = sbLedger.map(l=>({...l,
+      original_amount:parseFloat(l.original_amount)||0,
+      balance:parseFloat(l.balance)||0,
+      emi:parseFloat(l.emi)||0,
+      start_month:parseInt(l.start_month)||1,
+      start_year:parseInt(l.start_year)||2026,
+    }));
+
+    DB.recoveries = sbRecov.map(r=>({...r,
+      amount:parseFloat(r.amount)||0,
+    }));
+
     // Data lives only in memory — Supabase is the source of truth
 
     const total = sbEmps.length+sbRuns.length+sbLines.length+sbTrips.length;
