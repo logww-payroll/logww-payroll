@@ -3585,10 +3585,14 @@ function openRecoveryModal(ledgerId){
   document.getElementById('rec-ledger-id').value=ledgerId;
   document.getElementById('rec-amount').value=Math.min(l.emi||0,l.balance||0)||'';
   document.getElementById('rec-notes').value='';
+  // Default to Run Payroll period if available, else current month
+  const _defM=document.getElementById('run-month')?getM('run-month'):now.getMonth()+1;
+  const _defY=document.getElementById('run-year')?getY('run-year'):now.getFullYear();
   ['rec-month','rec-year'].forEach(id=>{
-    const el=document.getElementById(id);if(el.children.length)return;
-    if(id.includes('month'))MONTHS.forEach((m,i)=>{const o=document.createElement('option');o.value=i+1;o.textContent=m;if(i+1===now.getMonth()+1)o.selected=true;el.appendChild(o);});
-    else for(let y=now.getFullYear();y>=2024;y--){const o=document.createElement('option');o.value=y;o.textContent=y;if(y===now.getFullYear())o.selected=true;el.appendChild(o);}
+    const el=document.getElementById(id);
+    el.innerHTML='';
+    if(id.includes('month'))MONTHS.forEach((m,i)=>{const o=document.createElement('option');o.value=i+1;o.textContent=m;if(i+1===_defM)o.selected=true;el.appendChild(o);});
+    else for(let y=now.getFullYear();y>=2024;y--){const o=document.createElement('option');o.value=y;o.textContent=y;if(y===_defY)o.selected=true;el.appendChild(o);}
   });
   updateRecPreview(ledgerId);
   document.getElementById('rec-amount').oninput=()=>updateRecPreview(ledgerId);
