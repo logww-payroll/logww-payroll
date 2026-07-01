@@ -1215,7 +1215,21 @@ async function savePayroll(){
     return;
   }
   let run=DB.runs.find(r=>r.period_month===m&&r.period_year===y);
-  if(run){DB.lines=DB.lines.filter(l=>l.run_id!==run.id);}
+  if(run){
+    // Confirm overwrite
+    const confirmed=await new Promise(res=>{
+      if(!confirm(`A payroll run for ${MONTHS[m-1]} ${y} already exists.\n\nOverwrite it with the current figures?`)){res(false);return;}
+      res(true);
+    });
+    if(!confirmed){toast('Cancelled','Payroll run not overwritten.','info');return;}
+    DB.lines=DB.lines.filter(l=>l.run_id!==run.id);
+    // Also delete existing lines from Supabase
+    if(sbUrl&&sbKey){
+      let tok=sbKey;try{const{data:{session}}=await supabaseClient.auth.getSession();if(session?.access_token)tok=session.access_token;}catch(e){}
+      const h={apikey:sbKey,Authorization:'Bearer '+tok,'Prefer':'return=minimal'};
+      await fetch(`${sbUrl}/rest/v1/payroll_lines?run_id=eq.${run.id}`,{method:'DELETE',headers:h}).catch(()=>{});
+    }
+  }
   else{run={id:uid(),period_month:m,period_year:y,created_at:new Date().toISOString()};DB.runs.push(run);}
   const lines=Object.values(runOverrides).map(L=>{
     const customTotal=totalCustomEarns(L.employee_id,m,y);
