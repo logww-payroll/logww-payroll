@@ -3667,15 +3667,15 @@ async function saveRecovery(){
     if(supabaseClient){try{const {data:{session}}=await supabaseClient.auth.getSession();if(session?.access_token)authToken=session.access_token;}catch(e){}}
     const h={apikey:sbKey,Authorization:'Bearer '+authToken,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
     // Push recovery record
-    sbPost('ledger_recoveries',
-      body:JSON.stringify({id:rec.id,ledger_id:rec.ledger_id,employee_id:rec.employee_id,
-        employee_name:rec.employee_name,period_month:rec.period_month,period_year:rec.period_year,
-        amount:rec.amount,notes:rec.notes||''})
-    }).catch(e=>console.error('Recovery push:',e));
+    sbPost('ledger_recoveries',{id:rec.id,ledger_id:rec.ledger_id,employee_id:rec.employee_id,
+      employee_name:rec.employee_name,period_month:rec.period_month,period_year:rec.period_year,
+      amount:rec.amount,notes:rec.notes||''}).catch(e=>console.error('Recovery push:',e));
     // Update ledger balance
-    sbPost('employee_ledger',
-      body:JSON.stringify({balance:l.balance,status:l.status})
-    }).catch(e=>console.error('Ledger update:',e));
+    sbPost('employee_ledger',{id:l.id,employee_id:l.employee_id,employee_name:l.employee_name,
+      date:l.date||null,type:l.type,type_label:l.type_label||'',description:l.description||'',
+      reference:l.reference||'',original_amount:l.original_amount||0,balance:l.balance,
+      emi:l.emi||0,start_month:l.start_month||1,start_year:l.start_year||2026,
+      status:l.status}).catch(e=>console.error('Ledger update:',e));
   }
 
   closeM('modal-recovery');
