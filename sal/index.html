@@ -3725,7 +3725,8 @@ async function delRecovery(recId,ledgerId){
 }
 
 function editRun(month, year){
-  nav('run');
+  const sbEl=document.querySelector('.sb-item[onclick*="run"]')||document.querySelector('.sb-item');
+  nav('run', sbEl);
   setTimeout(()=>{
     const mSel=document.getElementById('run-month');
     const ySel=document.getElementById('run-year');
