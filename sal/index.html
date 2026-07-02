@@ -1146,8 +1146,8 @@ function buildRunTable(){
       basic_salary:e.basic_salary,
       // other_commission = manual attendance allowance (variable, entered in Run Payroll)
       other_commission:ex ? (ex.other_commission!=null ? ex.other_commission : 0) : 0,
-      // Respect saved trip_commission if run already saved; only auto-calc for new runs
-      trip_commission:ex ? (ex.trip_commission!=null ? ex.trip_commission : autoTrip) : autoTrip,
+      // Always recalculate trip_commission from live trip log if run is not paid
+      trip_commission: (ex && run?.status==='paid') ? (ex.trip_commission!=null ? ex.trip_commission : autoTrip) : autoTrip,
       advances:totalDed,              // fresh from deductions + ledger EMI
       deduction_notes:allDedNotes,    // fresh notes
       // Keep manual overrides for days if already saved
