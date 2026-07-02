@@ -995,7 +995,7 @@ function clearDedForm(){
   clearDedAttach();
 }
 
-function saveDed(){
+async function saveDed(){
   const m=getM('ded-month'),y=getY('ded-year');
   const id=document.getElementById('ded-id').value;
   const empId=document.getElementById('dd-emp').value;
@@ -1013,10 +1013,29 @@ function saveDed(){
   };
   if(id)DB.deds=DB.deds.map(x=>x.id===id?d:x);else DB.deds.push(d);
   _dedAttachments=[];
+  // Push to Supabase immediately
+  if(sbUrl&&sbKey){
+    let tok=sbKey;try{const{data:{session}}=await supabaseClient.auth.getSession();if(session?.access_token)tok=session.access_token;}catch(e){}
+    const h={apikey:sbKey,Authorization:'Bearer '+tok,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
+    fetch(sbUrl+'/rest/v1/deductions',{method:'POST',headers:h,body:JSON.stringify({
+      id:d.id,period_month:d.period_month,period_year:d.period_year,
+      employee_id:d.employee_id,employee_name:d.employee_name,
+      ded_date:d.ded_date||null,category:d.category||'other',
+      description:d.description||'',reference:d.reference||'',
+      amount:d.amount||0,traffic_points:d.traffic_points||0
+    })}).catch(e=>console.warn('Ded sync error:',e));
+  }
   save();closeM('modal-ded');renderDeds();
 }
 
-async function delDed(id){if(await showConfirm('Delete deduction','This deduction record will be permanently removed.','Delete','btn dan','danger')){DB.deds=DB.deds.filter(d=>d.id!==id);save();renderDeds();}}
+async function delDed(id){if(await showConfirm('Delete deduction','This deduction record will be permanently removed.','Delete','btn dan','danger')){
+  if(sbUrl&&sbKey){
+    let tok=sbKey;try{const{data:{session}}=await supabaseClient.auth.getSession();if(session?.access_token)tok=session.access_token;}catch(e){}
+    const h={apikey:sbKey,Authorization:'Bearer '+tok,'Prefer':'return=minimal'};
+    fetch(sbUrl+'/rest/v1/deductions?id=eq.'+id,{method:'DELETE',headers:h}).catch(e=>console.warn('Ded delete error:',e));
+  }
+  DB.deds=DB.deds.filter(d=>d.id!==id);save();renderDeds();}
+}
 
 /* ─── RUN PAYROLL ─── */
 function renderRun(){
@@ -3662,6 +3681,51 @@ async function delRecovery(recId,ledgerId){
   if(rec){const l=DB.ledger.find(x=>x.id===ledgerId);if(l){l.balance=Math.min(l.original_amount,(l.balance||0)+rec.amount);l.status='active';}DB.recoveries=DB.recoveries.filter(r=>r.id!==recId);}
   save();renderLedger();
 }
+
+function editRun(month, year){
+  showPage('run');
+  setTimeout(()=>{
+    const mSel=document.getElementById('run-month');
+    const ySel=document.getElementById('run-year');
+    if(mSel) mSel.value=month;
+    if(ySel) ySel.value=year;
+    buildRunTable();
+  },150);
+}
+
+async function downloadBackup(){
+  if(!window.XLSX){toast('Loading...','','info',2000);return;}
+  const wb=XLSX.utils.book_new();
+  const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const empRows=[['ID','Name','Type','Designation','Work Permit','Labor Card','IBAN','Basic','Housing','Transport','Other Allowance','Email']];
+  DB.employees.forEach(e=>empRows.push([e.id,e.name,e.sheet,e.designation||'',e.work_permit||'',e.labor_card||'',e.iban||'',e.basic_salary||0,e.housing_allowance||0,e.transport_allowance||0,e.other_allowance||0,e.email||'']));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(empRows),'Employees');
+  const tripRows=[['ID','Period','Employee','Date','Truck','Route','Customer','Trip Comm','Border','Diesel','Other','Total']];
+  DB.trips.forEach(t=>tripRows.push([t.id,MO[(t.period_month||1)-1]+' '+(t.period_year||''),t.employee_name||'',t.trip_date||'',t.truck||'',t.route||'',t.customer||'',t.trip_comm||0,t.border_exp||0,t.diesel_exp||0,t.other_exp||0,t.total||0]));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(tripRows),'Trip Log');
+  const runRows=[['ID','Period','Employees','Total Net','Total Gross','Created']];
+  DB.runs.forEach(r=>runRows.push([r.id,MO[(r.period_month||1)-1]+' '+(r.period_year||''),r.employee_count||0,r.total_net||0,r.total_gross||0,r.created_at||'']));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(runRows),'Payroll Runs');
+  const lineRows=[['Run ID','Employee','Days Worked','Total Days','Total Fixed','Trip Comm','Attendance','Advances','Net Payable']];
+  DB.lines.forEach(l=>lineRows.push([l.run_id,l.employee_name||'',l.worked_days||0,l.total_days||30,l.total_fixed||0,l.trip_commission||0,l.other_commission||0,l.advances||0,l.net_payable||0]));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(lineRows),'Payroll Lines');
+  const ledRows=[['ID','Employee','Date','Type','Description','Reference','Original','Balance','EMI','Start Month','Start Year','Status']];
+  DB.ledger.forEach(l=>ledRows.push([l.id,l.employee_name||'',l.date||'',l.type_label||l.type||'',l.description||'',l.reference||'',l.original_amount||0,l.balance||0,l.emi||0,l.start_month||'',l.start_year||'',l.status||'']));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(ledRows),'Employee Ledger');
+  const recRows=[['ID','Ledger ID','Employee','Period','Amount','Date','Notes']];
+  DB.recoveries.forEach(r=>recRows.push([r.id,r.ledger_id||'',r.employee_name||'',MO[(r.period_month||1)-1]+' '+(r.period_year||''),r.amount||0,r.date||'',r.notes||'']));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(recRows),'Recoveries');
+  const dedRows=[['ID','Period','Employee','Date','Category','Description','Reference','Amount']];
+  DB.deds.forEach(d=>dedRows.push([d.id,MO[(d.period_month||1)-1]+' '+(d.period_year||''),d.employee_name||'',d.ded_date||'',d.category||'',d.description||'',d.reference||'',d.amount||0]));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(dedRows),'Deductions');
+  const rateRows=[['ID','Route','Customer','Rate']];
+  DB.rates.forEach(r=>rateRows.push([r.id,r.route||'',r.customer||'',r.rate||0]));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rateRows),'Commission Rates');
+  const n=new Date();
+  XLSX.writeFile(wb,`LogWW_Payroll_Backup_${n.getDate()}-${n.getMonth()+1}-${n.getFullYear()}.xlsx`);
+  toast('Backup downloaded','','success',3000);
+}
+
 </script>
 
 <!-- Paste from Excel modal -->
