@@ -893,7 +893,7 @@ function calcTripTotal(){
   document.getElementById('tr-total').value=(comm+b+d+o).toFixed(2);
 }
 
-function saveTrip(){
+async function saveTrip(){
   const m=getM('trip-month'),y=getY('trip-year');
   const id=document.getElementById('trip-id').value;
   const empId=document.getElementById('tr-driver').value;
@@ -917,10 +917,52 @@ function saveTrip(){
   };
   if(id)DB.trips=DB.trips.map(x=>x.id===id?t:x);else DB.trips.push(t);
   save();
+  // Push to Supabase immediately
+  if(sbUrl&&sbKey){
+    let tok=sbKey;try{const{data:{session}}=await supabaseClient.auth.getSession();if(session?.access_token)tok=session.access_token;}catch(e){}
+    const h={apikey:sbKey,Authorization:'Bearer '+tok,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
+    fetch(sbUrl+'/rest/v1/trip_log',{method:'POST',headers:h,body:JSON.stringify(t)}).catch(e=>console.warn('Trip sync error:',e));
+  }
   closeM('modal-trip');renderTrips();
+  // Refresh Run Payroll if currently viewing same period
+  const runM=document.getElementById('run-month'),runY=document.getElementById('run-year');
+  if(runM&&runY&&getM('run-month')===m&&getY('run-year')===y&&document.querySelector('[data-page="run"]')?.classList.contains('active')){
+    buildRunTable();
+  }
+
+async function clearTripLog(){
+  const m=getM('trip-month'),y=getY('trip-year');
+  if(!await showConfirm('Clear trip log','This will permanently delete all trips for '+MONTHS[m-1]+' '+y+'. This cannot be undone.','Clear all','btn dan','danger'))return;
+  DB.trips=DB.trips.filter(t=>!(t.period_month===m&&t.period_year===y));
+  save();
+  if(sbUrl&&sbKey){
+    let tok=sbKey;try{const{data:{session}}=await supabaseClient.auth.getSession();if(session?.access_token)tok=session.access_token;}catch(e){}
+    const h={apikey:sbKey,Authorization:'Bearer '+tok,'Prefer':'return=minimal'};
+    await fetch(sbUrl+'/rest/v1/trip_log?period_month=eq.'+m+'&period_year=eq.'+y,{method:'DELETE',headers:h}).catch(e=>console.warn('Clear trips error:',e));
+  }
+  renderTrips();
+  toast('Cleared','All trips for '+MONTHS[m-1]+' '+y+' deleted.','success',3000);
 }
 
-async function delTrip(id){if(await showConfirm('Delete trip','This trip will be permanently removed.','Delete','btn dan','danger')){DB.trips=DB.trips.filter(t=>t.id!==id);save();renderTrips();}}
+
+async function delTrip(id){
+  if(await showConfirm('Delete trip','This trip will be permanently removed.','Delete','btn dan','danger')){
+    const t=DB.trips.find(x=>x.id===id);
+    DB.trips=DB.trips.filter(t=>t.id!==id);
+    save();
+    if(sbUrl&&sbKey&&t){
+      let tok=sbKey;try{const{data:{session}}=await supabaseClient.auth.getSession();if(session?.access_token)tok=session.access_token;}catch(e){}
+      const h={apikey:sbKey,Authorization:'Bearer '+tok,'Prefer':'return=minimal'};
+      fetch(sbUrl+'/rest/v1/trip_log?id=eq.'+id,{method:'DELETE',headers:h}).catch(e=>console.warn('Trip delete error:',e));
+    }
+    renderTrips();
+    // Refresh Run Payroll if on same period
+    const runM=document.getElementById('run-month'),runY=document.getElementById('run-year');
+    if(t&&runM&&runY&&getM('run-month')===t.period_month&&getY('run-year')===t.period_year&&document.querySelector('[data-page="run"]')?.classList.contains('active')){
+      buildRunTable();
+    }
+  }
+}
 
 /* ─── DEDUCTIONS ─── */
 function renderDeds(){
