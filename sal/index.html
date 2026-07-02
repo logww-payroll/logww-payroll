@@ -1449,7 +1449,8 @@ function renderHistory(){
         }
         ${r.status==='paid'
           ?`<button class="btn xs" onclick="event.stopPropagation();unmarkRunPaid('${r.id}')" style="color:var(--amber-text);border-color:var(--amber-bd)">Unlock</button>`
-          :`<button class="btn xs dan" onclick="event.stopPropagation();delRun('${r.id}')">Delete</button>`
+          :`<button class="btn xs" onclick="event.stopPropagation();editRun(${r.period_month},${r.period_year})" style="color:var(--blue-text);border-color:var(--blue-bd)">Edit</button>
+           <button class="btn xs dan" onclick="event.stopPropagation();delRun('${r.id}')">Delete</button>`
         }</div>
       </div>
       <div class="hb" id="hb-${r.id}">
