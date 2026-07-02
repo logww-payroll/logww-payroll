@@ -917,12 +917,7 @@ async function saveTrip(){
   };
   if(id)DB.trips=DB.trips.map(x=>x.id===id?t:x);else DB.trips.push(t);
   save();
-  // Push to Supabase immediately
-  if(sbUrl&&sbKey){
-    let tok=sbKey;try{const{data:{session}}=await supabaseClient.auth.getSession();if(session?.access_token)tok=session.access_token;}catch(e){}
-    const h={apikey:sbKey,Authorization:'Bearer '+tok,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
-    fetch(sbUrl+'/rest/v1/trip_log',{method:'POST',headers:h,body:JSON.stringify(t)}).catch(e=>console.warn('Trip sync error:',e));
-  }
+  sbPost('trip_log',t).catch(e=>console.warn('Trip sync:',e));
   closeM('modal-trip');renderTrips();
   // Refresh Run Payroll if currently viewing same period
   const runM=document.getElementById('run-month'),runY=document.getElementById('run-year');
@@ -935,11 +930,7 @@ async function clearTripLog(){
   if(!await showConfirm('Clear trip log','This will permanently delete all trips for '+MONTHS[m-1]+' '+y+'. This cannot be undone.','Clear all','btn dan','danger'))return;
   DB.trips=DB.trips.filter(t=>!(t.period_month===m&&t.period_year===y));
   save();
-  if(sbUrl&&sbKey){
-    let tok=sbKey;try{const{data:{session}}=await supabaseClient.auth.getSession();if(session?.access_token)tok=session.access_token;}catch(e){}
-    const h={apikey:sbKey,Authorization:'Bearer '+tok,'Prefer':'return=minimal'};
-    await fetch(sbUrl+'/rest/v1/trip_log?period_month=eq.'+m+'&period_year=eq.'+y,{method:'DELETE',headers:h}).catch(e=>console.warn('Clear trips error:',e));
-  }
+  await sbDelete('trip_log','period_month=eq.'+m+'&period_year=eq.'+y).catch(e=>console.warn('Clear trips:',e));
   renderTrips();
   toast('Cleared','All trips for '+MONTHS[m-1]+' '+y+' deleted.','success',3000);
 }
@@ -950,11 +941,7 @@ async function delTrip(id){
     const t=DB.trips.find(x=>x.id===id);
     DB.trips=DB.trips.filter(t=>t.id!==id);
     save();
-    if(sbUrl&&sbKey&&t){
-      let tok=sbKey;try{const{data:{session}}=await supabaseClient.auth.getSession();if(session?.access_token)tok=session.access_token;}catch(e){}
-      const h={apikey:sbKey,Authorization:'Bearer '+tok,'Prefer':'return=minimal'};
-      fetch(sbUrl+'/rest/v1/trip_log?id=eq.'+id,{method:'DELETE',headers:h}).catch(e=>console.warn('Trip delete error:',e));
-    }
+    sbDelete('trip_log','id=eq.'+id).catch(e=>console.warn('Trip del:',e));
     renderTrips();
     // Refresh Run Payroll if on same period
     const runM=document.getElementById('run-month'),runY=document.getElementById('run-year');
@@ -1055,27 +1042,15 @@ async function saveDed(){
   };
   if(id)DB.deds=DB.deds.map(x=>x.id===id?d:x);else DB.deds.push(d);
   _dedAttachments=[];
-  // Push to Supabase immediately
-  if(sbUrl&&sbKey){
-    let tok=sbKey;try{const{data:{session}}=await supabaseClient.auth.getSession();if(session?.access_token)tok=session.access_token;}catch(e){}
-    const h={apikey:sbKey,Authorization:'Bearer '+tok,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
-    fetch(sbUrl+'/rest/v1/deductions',{method:'POST',headers:h,body:JSON.stringify({
-      id:d.id,period_month:d.period_month,period_year:d.period_year,
-      employee_id:d.employee_id,employee_name:d.employee_name,
-      ded_date:d.ded_date||null,category:d.category||'other',
-      description:d.description||'',reference:d.reference||'',
-      amount:d.amount||0,traffic_points:d.traffic_points||0
-    })}).catch(e=>console.warn('Ded sync error:',e));
-  }
+  sbPost('deductions',{id:d.id,period_month:d.period_month,period_year:d.period_year,
+    employee_id:d.employee_id,employee_name:d.employee_name,ded_date:d.ded_date||null,
+    category:d.category||'other',description:d.description||'',reference:d.reference||'',
+    amount:d.amount||0,traffic_points:d.traffic_points||0}).catch(e=>console.warn('Ded sync:',e));
   save();closeM('modal-ded');renderDeds();
 }
 
 async function delDed(id){if(await showConfirm('Delete deduction','This deduction record will be permanently removed.','Delete','btn dan','danger')){
-  if(sbUrl&&sbKey){
-    let tok=sbKey;try{const{data:{session}}=await supabaseClient.auth.getSession();if(session?.access_token)tok=session.access_token;}catch(e){}
-    const h={apikey:sbKey,Authorization:'Bearer '+tok,'Prefer':'return=minimal'};
-    fetch(sbUrl+'/rest/v1/deductions?id=eq.'+id,{method:'DELETE',headers:h}).catch(e=>console.warn('Ded delete error:',e));
-  }
+  sbDelete('deductions','id=eq.'+id).catch(e=>console.warn('Ded del:',e));
   DB.deds=DB.deds.filter(d=>d.id!==id);save();renderDeds();}
 }
 
@@ -1323,7 +1298,7 @@ async function savePayroll(){
 
   // Push to Supabase — wrapped in try/catch so errors don't block the alert
   if(sbUrl&&sbKey){
-    try{ await pushSB(run,lines); }
+    try{ await pushSB(run,lines); } // pushSB handles Supabase
     catch(e){ console.error('Supabase push error:',e); }
   }
 
@@ -1580,8 +1555,8 @@ function delEmp(id){showConfirm('Delete employee','This employee will be removed
 function renderRates(){document.getElementById('rates-tb').innerHTML=DB.rates.map(r=>`<tr><td>${r.customer||'—'}</td><td style="font-weight:500">${r.route}</td><td>${aed(r.rate)}</td><td><div style="display:flex;gap:6px"><button class="btn xs" onclick="editRate('${r.id}')">Edit</button><button class="btn xs dan" onclick="delRate('${r.id}')">Del</button></div></td></tr>`).join('');}
 function openRateModal(){document.getElementById('rate-id').value='';document.getElementById('rate-cust').value='';document.getElementById('rate-route').value='';document.getElementById('rate-amt').value='';document.getElementById('modal-rate').classList.add('open');}
 function editRate(id){const r=DB.rates.find(x=>x.id===id);if(!r)return;document.getElementById('rate-id').value=r.id;document.getElementById('rate-cust').value=r.customer||'';document.getElementById('rate-route').value=r.route;document.getElementById('rate-amt').value=r.rate;document.getElementById('modal-rate').classList.add('open');}
-function saveRate(){const id=document.getElementById('rate-id').value;const r={id:id||uid(),customer:document.getElementById('rate-cust').value,route:document.getElementById('rate-route').value,rate:parseFloat(document.getElementById('rate-amt').value)||0};if(id)DB.rates=DB.rates.map(x=>x.id===id?r:x);else DB.rates.push(r);save();closeM('modal-rate');renderRates();}
-function delRate(id){showConfirm('Delete rate','This commission rate will be removed.','Delete','btn dan','danger').then(ok=>{if(ok){DB.rates=DB.rates.filter(r=>r.id!==id);save();renderRates();}});}
+function saveRate(){const id=document.getElementById('rate-id').value;const r={id:id||uid(),customer:document.getElementById('rate-cust').value,route:document.getElementById('rate-route').value,rate:parseFloat(document.getElementById('rate-amt').value)||0};if(id)DB.rates=DB.rates.map(x=>x.id===id?r:x);else DB.rates.push(r);sbPost('commission_rates',r).catch(e=>console.warn('Rate sync:',e));save();closeM('modal-rate');renderRates();}
+function delRate(id){showConfirm('Delete rate','This commission rate will be removed.','Delete','btn dan','danger').then(ok=>{if(ok){DB.rates=DB.rates.filter(r=>r.id!==id);sbDelete('commission_rates','id=eq.'+id).catch(e=>console.warn('Rate del:',e));save();renderRates();}});}
 
 /* ─── SETTINGS ─── */
 function loadSettings(){
@@ -1631,18 +1606,20 @@ async function pushSB(run,lines){
   const h={apikey:sbKey,Authorization:'Bearer '+authToken,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
   const post=(table,body)=>fetch(`${sbUrl}/rest/v1/${table}`,{method:'POST',headers:h,body:JSON.stringify(body)});
   try{
+    // Delete existing lines first to prevent duplicates
+    await sbDelete('payroll_lines','run_id=eq.'+run.id);
     // Payroll run + lines
-    await post('payroll_runs',{id:run.id,period_month:run.period_month,period_year:run.period_year,
+    await sbPost('payroll_runs',{id:run.id,period_month:run.period_month,period_year:run.period_year,
       total_net:run.total_net||0,total_gross:run.total_gross||0,employee_count:run.employee_count||0,
       created_at:run.created_at||new Date().toISOString()});
     for(const L of lines){
-      await post('payroll_lines',{id:L.id,run_id:L.run_id,employee_id:L.employee_id,employee_name:L.employee_name,
+      await sbPost('payroll_lines',{id:L.id,run_id:L.run_id,employee_id:L.employee_id,employee_name:L.employee_name,
         worked_days:L.worked_days||0,total_days:L.total_days||30,basic_salary:L.basic_salary||0,
         trip_commission:L.trip_commission||0,other_commission:L.other_commission||0,advances:L.advances||0,
         deduction_notes:L.deduction_notes||'',total_fixed:L.total_fixed||0,total_variable:L.total_variable||0,
         net_payable:L.net_payable||0});
     }
-    // Trips + deductions for this period
+    // Trips + deductions for this period (via pushSB called from savePayroll)
     const m=run.period_month,y=run.period_year;
     for(const t of DB.trips.filter(x=>x.period_month===m&&x.period_year===y)){
       await post('trip_log',{id:t.id,period_month:t.period_month,period_year:t.period_year,
@@ -3613,18 +3590,15 @@ function saveLedgerEntry(){
       status:'active',created_at:new Date().toISOString()});
   }
   // Immediately push to Supabase
-  if(sbUrl&&sbKey){
+  {
     const entry=id?DB.ledger.find(x=>x.id===id):DB.ledger[DB.ledger.length-1];
     if(entry){
-      const h={apikey:sbKey,Authorization:'Bearer '+sbKey,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
-      fetch(sbUrl+'/rest/v1/employee_ledger',{method:'POST',headers:h,body:JSON.stringify({
-        id:entry.id,employee_id:entry.employee_id,employee_name:entry.employee_name,
-        date:entry.date||null,type:entry.type,type_label:entry.type_label,
+      sbPost('employee_ledger',{id:entry.id,employee_id:entry.employee_id,employee_name:entry.employee_name,
+        date:entry.date||null,type:entry.type,type_label:entry.type_label||'',
         description:entry.description||'',reference:entry.reference||'',
         original_amount:entry.original_amount||0,balance:entry.balance||0,
         emi:entry.emi||0,start_month:entry.start_month||1,start_year:entry.start_year||2026,
-        status:entry.status||'active',created_at:entry.created_at||new Date().toISOString()
-      })}).catch(e=>console.warn('Ledger sync error:',e));
+        status:entry.status||'active'}).catch(e=>console.warn('Ledger sync:',e));
     }
   }
   save();closeM('modal-ledger');renderLedger();
@@ -3693,13 +3667,13 @@ async function saveRecovery(){
     if(supabaseClient){try{const {data:{session}}=await supabaseClient.auth.getSession();if(session?.access_token)authToken=session.access_token;}catch(e){}}
     const h={apikey:sbKey,Authorization:'Bearer '+authToken,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
     // Push recovery record
-    fetch(`${sbUrl}/rest/v1/ledger_recoveries`,{method:'POST',headers:h,
+    sbPost('ledger_recoveries',
       body:JSON.stringify({id:rec.id,ledger_id:rec.ledger_id,employee_id:rec.employee_id,
         employee_name:rec.employee_name,period_month:rec.period_month,period_year:rec.period_year,
         amount:rec.amount,notes:rec.notes||''})
     }).catch(e=>console.error('Recovery push:',e));
     // Update ledger balance
-    fetch(`${sbUrl}/rest/v1/employee_ledger?id=eq.${l.id}`,{method:'PATCH',headers:h,
+    sbPost('employee_ledger',
       body:JSON.stringify({balance:l.balance,status:l.status})
     }).catch(e=>console.error('Ledger update:',e));
   }
