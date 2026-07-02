@@ -924,6 +924,7 @@ async function saveTrip(){
   if(runM&&runY&&getM('run-month')===m&&getY('run-year')===y&&document.querySelector('[data-page="run"]')?.classList.contains('active')){
     buildRunTable();
   }
+}
 
 async function clearTripLog(){
   const m=getM('trip-month'),y=getY('trip-year');
